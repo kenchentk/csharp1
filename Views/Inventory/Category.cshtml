@@ -1,0 +1,111 @@
+﻿@using StoreFront2.Data;
+
+@{
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+    }
+    ViewBag.Title = "Categories";
+}
+
+<div class="container">
+    <div class="col-md-12">
+        <div class="row">
+            <div class="panel with-nav-tabs panel-default">
+                <div class="panel-heading">
+                    <ul class="nav nav-tabs">
+                        <li class="active">
+                            <a href="#tab1default" data-toggle="tab">
+                                Categories
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="panel-body">
+                    <div class="tab-content">
+                        <div class="tab-pane fade in active" id="tab1default">
+                            @(Html.Kendo().Grid<StoreFront2.ViewModels.CategoryViewModel>()
+              .Name("grid")
+              .Columns(columns =>
+              {
+                  columns.Bound(c => c.Name);
+                  columns.Bound(c => c.Desc);
+                  columns.Command(command => { command.Edit(); command.Destroy(); }).Width(180);
+              })
+              .ToolBar(toolbar =>
+              {
+                  toolbar.Create();
+              })
+              .Editable(editable => editable.Mode(GridEditMode.PopUp).TemplateName("CategoryEditor"))
+              .Scrollable(scrollable => scrollable.Enabled(false))
+              .HtmlAttributes(new { style = "height:550px;" })
+              .Events(events =>
+              {
+                  events.Save("onSave");
+              })
+              .DataSource(dataSource => dataSource
+                    .Ajax()
+                    .Sort(sort => sort.Add("Name").Ascending())
+                    .Events(events =>
+                    {
+                        events.Error("error_handler");
+                        events.RequestStart("onRequestStart");
+                        events.RequestEnd("onRequestEnd");
+                    })
+                    .Model(model => model.Id(p => p.Id))
+                    .Read(read => read.Action("Categories_Read", "Inventory"))
+                    .Create(create => create.Action("Categories_Create", "Inventory"))
+                    .Update(update => update.Action("Categories_Update", "Inventory"))
+                    .Destroy(destroy => destroy.Action("Categories_Destroy", "Inventory"))
+                                  )
+                            )
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    function onSave(e) {
+        //Implement the event handler for Save
+    }
+
+    function onRequestEnd(e) {
+        if (e.type == "update" || e.type == "create") {
+            var grid = $("#grid");
+            grid.data("kendoGrid").dataSource.read();
+            e.preventDefault();
+        }
+    }
+
+    function onRequestStart(e) {
+        this.lastRequestType = e.type;
+    }
+
+    function error_handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                $.each(value.errors, function () {
+                    message += this + "\n";
+                });
+            });
+
+            if (this.lastRequestType == "destroy") {
+                this.cancelChanges();
+            }
+
+            alert(message);
+
+
+        }
+    }
+</script>

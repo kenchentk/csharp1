@@ -1,0 +1,496 @@
+﻿@model IEnumerable<StoreFront2.ViewModels.OrderDetailViewModel>
+@using StoreFront2.Data
+@using StoreFront2.Models
+@using StoreFront2.Helpers
+@{
+    var _access = new UserPermission();
+    var _usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    var _site = new Site();
+    if (Session["Site"] != null)
+    {
+        Layout = ((Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((Site)Session["Site"]).StoreFrontName;
+        _setting = ((Site)Session["Site"]).Setting;
+        _access = ((Site)Session["Site"]).SiteAuth;
+        _usersetting = ((Site)Session["Site"]).SiteUserSetting;
+        _site = (Site)Session["Site"];
+    }
+}
+<div class="container">
+    <div class="col-md-12">
+        <div class="panel-body">
+            <button class="btn btn-success" onclick="backLink(event)">
+                <span class="glyphicon glyphicon-backward"></span>
+                Back to List
+            </button>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="panel-body">
+            <div class="k-card k-card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <h5 style="font-family:sans-serif">I WOULD LIKE TO</h5>
+                    </div>
+                    <div class="col-md-10">
+                        @(Html.Kendo().DropDownList()
+                                                        .Name("myAction")
+                                                        .DataTextField("Text")
+                                                        .DataValueField("Value")
+                                                        .BindTo(ViewBag.ActionList)
+                                                        .Value("")
+                        )
+                        <button class="btn btn-success btn-sm" onclick="onMyAction(event)">Execute Action</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="printBody" class="col-md-12">
+        <div class="panel-body">
+            <div class="k-card k-card-body">
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <p style="font-size:x-large">Orders Details : @ViewBag.Order.Id</p>
+                        <p id="pOrderStatus" style="font-size:medium">Orders Status : @ViewBag.OrderStatus</p>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card ">
+                <div class="k-card-header" style="background:#e8aa56">
+                    <span style="color:white">Items Ordered</span>
+                </div>
+                <div class="k-card-body">
+                    <div class="row" style="background:#8cd2f4; color:white">
+                        <div class="col-md-6 col-xs-6">Product</div>
+                        <div class="col-sm-2 hidden-xs">Quantity Ordered</div>
+                        <div class="col-xs-2 hidden-sm hidden-md hidden-lg">Qty</div>
+                        @{ if (_setting.DisplayProductPrices == 1)
+                            {
+                                <div class="col-md-2 col-xs-2">Price</div>
+                            }
+                        }
+                        <div class="col-md-2 col-xs-2">Total</div>
+                    </div>
+                    @foreach (StoreFront2.ViewModels.OrderDetailViewModel objItem in Model)
+                    {
+                        <div class="row" style="padding:5px">
+                            <div class="col-md-6 col-xs-6 media">
+                                <a class="thumbnail pull-left" href="#"> <img class="media-object" src="~/@Url.Content(@objItem.ImageRelativePath)" onerror="src='@Url.Content("~/Content/"+_storeFrontName+"/Images/default.png")'" style="width: 16px; height: 16px;"> </a>
+                                <div class="media-body">
+                                    <p>@objItem.ShortDesc</p>
+                                </div>
+                            </div>
+                            <span class="col-xs-2">@objItem.Qty</span>
+                            @{ if (_setting.DisplayProductPrices == 1)
+                                {
+                                    <span class="col-xs-2">@objItem.Price</span>
+                                }
+                            }
+                            <span class="col-xs-2">@objItem.Total</span>
+                        </div>
+                    }
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="k-card">
+                        <div class="k-card-header" style="background:#e8aa56">
+                            <span style="color:white">Order Information</span>
+                        </div>
+                        <div class="form-horizontal" style="width:100%; padding-top:10px">
+                            <div class="form-group">
+                                @Html.Label("Order #", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.Order.Id</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("PO #", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.Order.PONumber</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Order Status", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div id="iOrderStatus" class="col-md-8">@ViewBag.OrderStatus</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Order Date", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.Order.DateCreated.ToString("MM/dd/yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="k-card">
+                        <div class="k-card-header" style="background:#e8aa56">
+                            <span style="color:white">Shipping Information</span>
+                        </div>
+                        <div class="form-horizontal" style="width:100%; padding-top:10px">
+                            <div class="form-group">
+                                @Html.Label("Ship Date", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@(ViewBag.ShippingInfo.DateCreated == null ? "not shipped" : ViewBag.ShippingInfo.DateCreated.ToString("MM/dd/yyyy"))</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Method Requested", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShipMethodRequested</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="k-card">
+                        <div class="k-card-header" style="background:#e8aa56">
+                            <span style="color:white">Shipping From</span>
+                        </div>
+                        <div class="form-horizontal" style="width:100%; padding-top:10px">
+                            <div class="form-group">
+                                @Html.Label("Company", htmlAttributes: new { @class = "control-label col-md-4" })
+                                <div class="col-md-8" ;>@ViewBag.ShippingFrom.Company</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Name", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.FirstName @ViewBag.ShippingFrom.LastName </div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Address 1", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.Address1</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Address 2", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.Address2</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("City", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.City</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("State", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.State</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Zip", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.Zip</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Country", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.Country</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Phone", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.Phone</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Email", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingFrom.Email</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="k-card">
+                        <div class="k-card-header" style="background:#e8aa56">
+                            <span style="color:white">Shipping To</span>
+                        </div>
+                        <div class="form-horizontal" style="width:100%; padding-top:10px">
+                            <div class="form-group" style="padding:0px">
+                                @Html.Label("Company", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Company</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Name", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.FirstName @ViewBag.ShippingTo.LastName </div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Address 1", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Address1</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Address 2", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Address2</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("City", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.City</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("State", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.State</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Zip", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Zip</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Country", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Country</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Phone", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Phone</div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Email", htmlAttributes: new { @class = "control-label col-md-4", @style = "padding-top:0px;" })
+                                <div class="col-md-8">@ViewBag.ShippingTo.Email</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="k-card">
+                        <div class="k-card-header" style="background:#e8aa56">
+                            <span style="color:white">Notes</span>
+                        </div>
+                        <div class="k-card-body">
+                            @ViewBag.Notes
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card">
+                <div class="k-card-header" style="background:#e8aa56;">
+                    <span style="color:white">Tracking Information</span>
+                </div>
+                <div class="k-card-body">
+                    <div class="row" style="background:#8cd2f4; color:white">
+                        <div class="col-xs-4 col-sm-4 col-md-4">Date Shipped</div>
+                        <div class="col-xs-4 col-sm-4 col-md-4">Tracking</div>
+                        <div class="col-xs-3 col-sm-3 col-md-3"></div>
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                        </div>
+                    </div>
+                    @{ int i = 0;
+                        foreach (StoreFront2.ViewModels.TrackingViewModel objTracking in ViewBag.OrderTrackings)
+                        {
+                            i = i++;
+                            <div class="row" style="padding:5px">
+                                <div class="col-xs-4 col-sm-4 col-md-4">@objTracking.DateCreated.ToString("d")</div>
+                                <div class="col-xs-4 col-sm-4 col-md-4">@Html.Raw(objTracking.TrackingNumber)</div>
+                                <div class="col-xs-3 col-sm-3 col-md-3"></div>
+                            </div>
+
+                            <div id="@objTracking.Id" class="panel-collapse collapse">
+                                @*<div class="panel-heading" style="background:#f7a125">
+                                        <div class="row">
+                                            <div class="col-xs-2 col-sm-2 col-md-2">Qty</div>
+                                            <div class="col-xs-4 col-sm-4 col-md-4">Product</div>
+                                            <div class="col-xs-6 col-sm-6 col-md-6">Description</div>
+                                        </div>
+                                    </div>
+                                    <div class="panel-body" style="padding:2px;">
+
+                                        @foreach (StoreFront2.ViewModels.ShipmentDetailViewModel objDetail in objTracking.ShipmentDetails)
+                                        {
+                                            <a class="row">
+                                                <span class="col-xs-2 col-sm-2 col-md-2">@objDetail.Qty</span>
+                                                <span class="col-xs-4 col-sm-4 col-md-4">@objDetail.ProductCode</span>
+                                                <span class="col-xs-6 col-sm-6 col-md-6">@objDetail.ShortDesc</span>
+                                            </a>
+                                        }
+                                    </div>*@
+                                @*<div class="panel-footer">Panel Footer</div>*@
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="x/kendo-template" id="page-template">
+    <div class="page-template">
+        <div class="header">
+            <div style="float: right">Page #:pageNum# of #:totalPages#</div>
+            StoreFront Order
+        </div>
+        <div class="footer">
+            StoreFront Order
+            Page #:pageNum# of #:totalPages#
+        </div>
+    </div>
+</script>
+<style>
+
+    /* Make sure everything in the page template is absolutely positioned. All positions are relative to the page container. */
+    .page-template > * {
+        font-family: "DejaVu Sans", "Arial", sans-serif;
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        font-size: 30%;
+    }
+
+    .page-template .header {
+        top: 20px;
+        border-bottom: 1px solid #000;
+    }
+
+    .page-template .footer {
+        bottom: 20px;
+        border-top: 1px solid #000;
+    }
+</style>
+<script>
+    function backLink(e) {
+        if (@(_site.IsVendor ? "true" : "false") == true) {
+            window.location.href = '@Url.Action("VendorOrders", "Order")/';
+        }
+        else {
+            window.location.href = '@Url.Action("Index", "Order")/';
+        }
+    }
+
+    function onMyAction(e) {
+        var myAction = $("#myAction").val();
+
+        if (myAction == "actionPrintOrder") {
+            kendo.drawing.drawDOM("#printBody", {
+                paperSize: "A4",
+                margin: "0cm",
+                scale: 0.7,
+                template: $("page-template").html()
+            }).then(function (group) {
+                kendo.drawing.pdf.saveAs(group, 'order' + @ViewBag.Order.Id + '.pdf');
+            })
+        }
+
+        if (myAction == "actionOrderAgain") {
+            var currentDataItem = { id: @ViewBag.Order.Id };
+
+            $.ajax({
+                type: "POST",
+                url: "/Order/Cart_Reorder",
+                data: JSON.stringify({ order: currentDataItem }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (response) {
+                    if (response != null) {
+                        if (response.result == "Error") {
+                            alert(response.message);
+                        }
+                        else if (response.result == "Warning") {
+                            alert(response.message);
+                            $("#spanCartCount").text(response.totItemsInCart);
+                        }
+                        else {
+                            alert(response.message)
+                            $("#spanCartCount").text(response.totItemsInCart);
+                        }
+                    }
+                    else {
+                        alert("Something went wrong");
+                    }
+                },
+                failure: function (response) {
+                    alert(response.responseText);
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+
+        }
+
+        if (myAction == "actionCancelOrder" || myAction == "actionReinstateOrder" ) {
+            var isCancelling = true;
+            if (myAction == "actionReinstateOrder") { isCancelling = false }
+
+            var actionConfirmed = false;
+            var newStatus = "CN";
+            var orderIds = [@ViewBag.Order.Id];
+            if (isCancelling == true) {
+                var resp = confirm("Canceling this order?");
+                if (resp == true) {
+                    actionConfirmed = true;
+                }
+            } else {
+                var resp = confirm("Reinstate this order?");
+                if (resp == true) {
+                    actionConfirmed = true;
+                }
+                newStatus = "RP"
+            }
+            if (actionConfirmed) {
+                $.ajax({
+                    type: "POST",
+                    url: "/Order/Order_SetStatus",
+                    data: { status: newStatus, listOrders: orderIds },
+                    success: function (data) {
+                        if (data.value == 'success') {
+                            if (data.status == 'CN') {
+                                var statusDesc = "@GlobalConstants.OrderStatuses.Where(os => os.Code == "CN").FirstOrDefault().Desc";
+                                $("#pOrderStatus").text('Orders Status : ' + statusDesc);
+                                $("#iOrderStatus").text(statusDesc);
+                                var actionList = $("#myAction").data("kendoDropDownList");
+                                var oldData = actionList.dataSource.data();
+                                actionList.dataSource.remove(oldData[oldData.length - 1]); // remove last item
+                                actionList.dataSource.add({ Text : "Reinstate Order", Value : "actionReinstateOrder" });
+                                actionList.select(0);
+                            } else if (data.status == 'RP') {
+                                var statusDesc = "@GlobalConstants.OrderStatuses.Where(os => os.Code == "RP").FirstOrDefault().Desc";
+                                $("#pOrderStatus").text('Orders Status : ' + statusDesc);
+                                $("#iOrderStatus").text(statusDesc);
+                                //$("#pOrderStatus").text('Orders Status : @GlobalConstants.OrderStatuses.Where(os => os.Code == "RP").FirstOrDefault().Desc');
+                                var actionList = $("#myAction").data("kendoDropDownList");
+                                var oldData = actionList.dataSource.data();
+                                actionList.dataSource.remove(oldData[oldData.length - 1]); // remove last item
+                                actionList.dataSource.add({ Text : "Cancel Order", Value : "actionCancelOrder" });
+                                actionList.select(0);
+                            }
+                        } else {
+                            alert("Error during change status");
+                        }
+                    }
+                });
+            }
+        }
+
+        if (myAction == "actionResetOrder") {
+            var actionConfirmed = false;
+            var newStatus = "";
+            var actionString = "";
+            newStatus = "RP"
+            var orderIds = [@ViewBag.Order.Id];
+
+            var resp = confirm("Reset this order "+actionString+"?");
+            if (resp == true) {
+                actionConfirmed = true;
+            }
+            if (actionConfirmed) {
+                $.ajax({
+                    type: "POST",
+                    url: "/Order/Order_SetStatus",
+                    data: { status: newStatus, listOrders: orderIds },
+                    success: function (data) {
+                        if (data.value == 'success') {
+                            if (data.status == 'RP') {
+                                var statusDesc = "@GlobalConstants.OrderStatuses.Where(os => os.Code == "RP").FirstOrDefault().Desc";
+                                $("#pOrderStatus").text('Orders Status : ' + statusDesc);
+                                $("#iOrderStatus").text(statusDesc);
+                                var actionList = $("#myAction").data("kendoDropDownList");
+                                var oldData = actionList.dataSource.data();
+                                actionList.dataSource.remove(oldData[oldData.length - 1]); // remove last item (Reset Order)
+                                if (@_access.OrderCancel == 1) {
+                                    actionList.dataSource.add({ Text: "Cancel Order", Value: "actionCancelOrder" });
+                                }
+                                actionList.select(0);
+                            }
+                        } else {
+                            alert("Error during change status");
+                        }
+                    }
+                });
+            }
+        }
+
+    }
+
+</script>

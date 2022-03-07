@@ -1,0 +1,143 @@
+﻿@using StoreFront2.Models;
+@using StoreFront2.Data;
+
+@model StoreFront2.ViewModels.StoreFrontViewModel
+
+@{
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+    }
+    ViewBag.Title = "Admin";
+}
+
+<div class="container ">
+    <div class="row">
+        <div class="col-md-2">
+            @Html.ActionLink("Edit", "AdminEdit", new { id = Model.Id })
+        </div>
+        <div class="col-md-10">
+            <h2>StoreFront™ Admin</h2>
+
+            <hr />
+            @*<form id="storeFrontForm" action="/Controllers/Action" method="get">*@
+            @*@Html.DropDownList("storeFronts", Model.StoreFronts,
+                    "Select StoreFront",
+                    new { onchange = "OnChangeEvent(this)", @class = "form-control" })*@
+            @*</form>*@
+            <hr />
+            <dl class="dl-horizontal">
+                <dt>
+                    @Html.DisplayNameFor(model => model.Name)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.Name)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.CustomerServiceRep)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.CustomerServiceRep)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.OfficeNumber)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.OfficeNumber)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.OfficeHours)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.OfficeHours)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.Email)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.Email)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.BaseUrl)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.BaseUrl)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.LayoutPath)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.LayoutPath)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.SiteIcon)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.SiteIcon)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.SiteTitle)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.SiteTitle)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.LoginImage)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.LoginImage)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.SiteFooter)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.SiteFooter)
+                </dd>
+
+                <dt>
+                    @Html.DisplayNameFor(model => model.TemplateId)
+                </dt>
+
+                <dd>
+                    @Html.DisplayFor(model => model.TemplateId)
+                </dd>
+
+            </dl>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+<!--
+    function OnChangeEvent(dropDownElement) {
+        var selectedValue = dropDownElement.options[dropDownElement.selectedIndex].value;
+        document.location = "Admin/" + selectedValue
+    }
+    //$('#storeFront').change(function () { $('storeFrontForm').submit(); })
+//-->
+</script>

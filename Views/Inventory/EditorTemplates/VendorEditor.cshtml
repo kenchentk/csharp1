@@ -1,0 +1,309 @@
+﻿@model StoreFront2.ViewModels.VendorViewModel
+
+<div class="k-card k-card-body forCreate" style="width:auto">
+    <div class="form-horizontal" style="padding:10px">
+
+        <div class="form-group">
+            @Html.HiddenFor(model => model.Id)
+            @Html.HiddenFor(model => model.AspNetUserId)
+            <div class="form-group">
+                @Html.LabelFor(model => model.Alias, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Alias, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Alias, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Username, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Username, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Username, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.Password, new { @class = "col-md-4 control-label" })
+                <div class="col-md-8">
+                    @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.LabelFor(m => m.ConfirmPassword, new { @class = "col-md-4 control-label" })
+                <div class="col-md-8">
+                    @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.ConfirmPassword, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Address1, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Address1, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Address1, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Address2, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Address2, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Address2, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.City, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.City, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.City, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.State, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.State, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.State, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Zip, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Zip, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Zip, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Country, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @(Html.Kendo().DropDownListFor(m => m.Country)
+                    .DataValueField("Value")
+                    .DataTextField("Text")
+                    .DataSource(s => { s.Read(read => { read.Action("GetCountries", "Manage"); }); })
+                    .Value(Model.Country)
+                    )
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Phone, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Phone, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            @*<div class="form-group">
+                @Html.LabelFor(model => model.AspNetUserId, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @(Html.Kendo().DropDownListFor(model => model.AspNetUserId)
+                    .DataValueField("Value")
+                    .DataTextField("Text")
+                    .Filter("contains")
+                    .AutoWidth(true)
+                    .DataSource(ds => { ds.Read(read => read.Action("GetVendorUsers", "Inventory")); })
+                    .Value(Model.AspNetUserId)
+                    )
+                </div>
+                </div>*@
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Status, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @(Html.Kendo().Switch().Name("Status").Checked(Model.Status))
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="row forEdit">
+    <div class="col-md-6">
+
+        <div class="k-card k-card-body" style="width:auto">
+            <div class="form-horizontal" style="padding:10px">
+
+                <div class="form-group">
+                    @Html.HiddenFor(model => model.Id)
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Alias, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.Alias, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Alias, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Address1, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.Address1, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Address1, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Address2, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.Address2, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Address2, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.City, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.City, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.City, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.State, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.State, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.State, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Zip, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.Zip, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Zip, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Country, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @(Html.Kendo().DropDownListFor(m => m.Country)
+                    .DataValueField("Value")
+                    .DataTextField("Text")
+                    .DataSource(s => { s.Read(read => { read.Action("GetCountries", "Manage"); }); })
+                    .Value(Model.Country)
+                    )
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Phone, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Phone, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Status, htmlAttributes: new { @class = "control-label col-md-4" })
+                        <div class="col-md-8">
+                            @(Html.Kendo().Switch().Name("Status").Checked(Model.Status))
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="col-md-6">
+        <div class="k-card k-card-body">
+            <h4>Access</h4>
+            <div class="form-group">
+                @Html.LabelFor(model => model.Username, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Username, new { htmlAttributes = new { @class = "form-control k-textbox", disabled = "disabled", @readonly = "readonly", @style = "width:75px" } })
+                    <a id="btnEditSave" class="btn btn-default btn-sm" onclick="onBtnEditSave(event)">
+                        <span id="btnEditSaveIcon" class="glyphicon glyphicon-pencil"></span>
+                    </a>
+                    <a id="btnCancel" class="btn btn-default btn-sm" onclick="onBtnCancel(event)" style="display:none">
+                        <span id="btnCancelIcon" class="glyphicon glyphicon-remove"></span>
+                    </a>
+                    @Html.ValidationMessageFor(model => model.Username, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                    <input id="sendlink" value="Send Password Reset Link" class="btn btn-success btn-sm" onclick="onSendChangePasswordLinkClick(event)" />
+                    <div id="SendLinkError" class="field-validation-valid text-danger"></div>
+                    @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.Label("NEW Password", htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.Editor("Password", new { htmlAttributes = new { @class = "form-control", type = "password", onchange = "clearError" } })
+                    <span id="PasswordError" class="field-validation-valid text-danger" style="display:none">Password must be 6 character or longer</span>
+                </div>
+            </div>
+            <div class="form-group">
+
+                @Html.Label("Confirm NEW Password", htmlAttributes: new { @class = "control-label col-md-4" })
+                <div class="col-md-8">
+                    @Html.Editor("ConfirmPassword", new { htmlAttributes = new { @class = "form-control", type = "password", onchange = "clearError" } })
+                    <span id="ConfirmPasswordError" class="field-validation-valid text-danger" style="display:none">Password Confirmation is not the same</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="row">
+                    <div id="ChangePasswordError" class="col-md-4 col-md-offset-2 field-validation-valid text-danger"></div>
+                </div>
+                <div class="col-md-4 col-md-offset-2">
+                    <input id="btnChangePassword" value="Change Password" class="btn btn-success btn-sm" onclick="onChangePasswordClick(event)" />
+                </div>
+            </div>
+            <div>
+                @(Html.Kendo().Window().Name("windowChangePassword")
+                                .Title("Change Password")
+                                .Visible(false)
+                                .Modal(true)
+                                .Content(@<text>
+                                    <label class="col-md-2">Password</label>
+                                    <div class="col-md-10">
+                                        <input id="Password" type="password" onchange="clearError" />
+                                        <span id="PasswordError" class="field-validation-valid text-danger" style="display:none">Password must be 6 character or longer</span>
+                                    </div>
+                                    <label class="col-md-2">Confirm Password</label>
+                                    <div class="col-md-10">
+                                        <input id="ConfirmPassword" type="password" onchange="clearError" />
+                                        <span id="ConfirmPasswordError" class="field-validation-valid text-danger" style="display:none">Password Confirmation is not the same</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button id="btnChangePassword" class="k-button" onclick="onChangePasswordClick(event)">Change</button>
+                                    </div>
+                                </text>)
+        )
+            </div>
+        </div>
+    </div>
+</div>

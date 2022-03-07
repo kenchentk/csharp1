@@ -1,0 +1,321 @@
+﻿@model StoreFront2.ViewModels.ProductViewModel
+@using StoreFront2.Data
+@using StoreFront2.ViewModels
+
+@{
+                /**/
+
+                var _access = new UserPermission();
+                var _usersetting = new UserSetting();
+                var _storeFrontName = "Defaults";
+                var _setting = new SystemSetting();
+                var _site = new StoreFront2.Models.Site();
+                if (Session["Site"] != null)
+                {
+                    Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+                    _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+                    _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+                    _access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+                    _usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+                    _site = (StoreFront2.Models.Site)Session["Site"];
+                }
+}
+
+
+<div class="container content_product">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel with-nav-tabs panel-default">
+                <div class="panel-body">
+                    <div class="tab-content">
+                        <div class="tab-pane fade in active" id="tabImages">
+                            <div class="k-card k-card-body">
+                                <div class="form-horizontal">
+                                    <div class="row">
+                                        @(Html.Kendo().ScrollView()
+                                                                .Name("ProductImages")
+                                                                .EnablePager(false)
+                                                                .HtmlAttributes(new { style = "height:400px; max-width:100%" })
+                                                                .TemplateId("scrollview-template")
+                                                                .DataSource(s => s.Read(read => read.Action("Read_UploadedImages", "Inventory", new { productId = Model.Id })))
+                                                                .DataSource(d => d
+                                                                .Custom().Transport(t => t.Read(read => read.Action("Read_UploadedImages", "Inventory", new { productId = Model.Id }))).ServerPaging(true).PageSize(1))
+
+                                        )
+                                        @*@{var path = "~/" + Model.ImageRelativePath;}
+                                            <div style="display:flex; justify-content: center">
+                                                <img src="@Url.Content(path)" onerror="src='@Url.Content("~/Content/" + _storeFrontName + "/Images/default.png")'" class="k-card-image" style="width:auto; height:400px;" />
+                                            </div>*@
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="body_detail_product">
+                <div class="title_header">
+                    <p>
+                        @Html.Label("Categories") <span> > </span> @foreach (CategoryViewModel category in ViewBag.Categories)
+                        {
+                            <a href="/Order/ProductList/@category.Id">@category.Name</a>
+                        }
+                    </p>
+
+                </div>
+                <p class="name_product">
+                    @Html.DisplayFor(model => model.ProductCode)
+                </p>
+                <div class="boxAddToCart">
+                    <p class="titleQuatyti">Qty</p>
+                    @Html.TextBox("QtyOrdered")
+                    @{ if ((_setting.DisableOutOfStockOrdering == 1 && Model.InStock) || _setting.DisableOutOfStockOrdering == 0)
+                        {
+                            <button class="btn-sm btn-primary btn-addtocart" onclick="addToCart(event)">Add To Cart</button>
+                        }
+                    }
+                    @(Html.Kendo().Window().Name("AddedToCart")
+                                .Title("Product Added to Cart")
+                                .Visible(false)
+                                .Modal(true)
+                                .Draggable(false)
+                                .Width(300)
+                    )
+
+                    <span class="text-danger" id="QtyOrderedError"></span>
+                </div>
+
+                <div class="k-card k-card-body detailProduct">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ProductCode, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-6 control-detail " style="padding-top:6px">
+                                @Html.DisplayFor(model => model.ProductCode)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Upc, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-6 control-detail" style="padding-top:6px">
+                                @Html.DisplayFor(model => model.Upc)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Uom, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-6 control-detail" style="padding-top:6px">
+                                @Html.DisplayFor(model => model.Uom)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.MinQty, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-6 control-detail" style="padding-top:6px">
+                                @Html.DisplayFor(model => model.MinQty)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.MaxQty, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-6 control-detail" style="padding-top:6px">
+                                @Html.DisplayFor(model => model.MaxQty)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ShortDesc, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-6 control-detail" style="padding-top:6px">
+                                @Html.DisplayFor(model => model.ShortDesc)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.LongDesc, htmlAttributes: new { @class = "control-label col-md-6 pl-0" })
+                            <div class="col-md-12 control-detail pl-0" style="padding-top:6px">
+                                <fieldset disabled>
+                                    @Html.TextAreaFor(model => model.LongDesc)
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                @{ if (_setting.DisplayProductPrices == 1)
+                    {
+                        if (_site.CurrencyFlag == 1)
+                        {
+                            <span>Price : $ @Model.SellPrice </span>
+                        }
+                        else
+                        {
+                            <span>Price : $ @Model.SellPriceCAD </span>
+                        }
+                    }
+                }
+            </div>
+            <div class="row">
+                @{ if (_setting.DisplayInventoryAvailability == 1)
+                    {
+                        if (Model.InStock)
+                        {
+                            <i class="fa fa-check-circle"></i>
+                            if (_setting.DisplayInventoryAvailabilityFor == "Actual Inventory")
+                            {
+                                <span>@Model.EMSQty In Stock</span>
+                            }
+                            else
+                            {
+                                <span>In Stock</span>
+                            }
+                        }
+                        else
+                        {
+                            <i class="fa fa-ban" style="color:red"></i>
+                            <span class="general-label">Out of Stock</span>
+                            if (_setting.DisplayInventoryAvailabilityFor == "Actual Inventory" && Model.EstRestockDate != null)
+                            {
+                                <br />
+                                <span class="general-label">EST AVAILABLE DATE : @(Model.EstRestockDate?.ToString("d"))</span>
+                            }
+                        }
+                    }
+                }
+            </div>
+
+
+
+            <div class="row" id="rowDigitalDownload">
+                <div class="col-md-8 col-sm-8">
+                    <div class="k-card k-card-body">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                @Html.Label("Digital Download is available", htmlAttributes: new { @class = "control-label col-md-6" })
+                                <div class="col-md-6" style="padding-top:6px">
+                                    <div class="k-card k-card-body" style="font-weight:bold">
+                                        <a href="/@Url.Content("Content/" + _storeFrontName + "/Files/" + Path.GetFileName(Model.FileRelativePath ?? "default.png"))" target="_blank">
+                                            <img id="fileProduct"
+                                                 alt="@Path.GetFileName(Model.FileRelativePath ?? "")"
+                                                 title="@Path.GetFileName(Model.FileRelativePath ?? "")"
+                                                 onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Files/default.png")'"
+                                                 style="width: 72px; height: 72px;" />
+                                            @Path.GetFileName(Model.FileRelativePath)
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script id="scrollview-template" type="text/x-kendo-template">
+    <div style="text-align:center">
+        <a href="/#:data.RelativePath#" target="_blank">
+            <img src="/#:data.RelativePath#" title="#= data.FileName #" class="img-fluid" style="max-height:35%; max-width:35%" onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Files/default.png")'" />
+        </a>
+    </div>
+</script>
+
+<script type="text/x-kendo-template" id="templateAddedToCart">
+    <div id="details-container">
+        <h2>#= LowLevel #</h2>
+        <h2>#= PickPackCode #</h2>
+        <em>#= ShortDesc #</em>
+    </div>
+</script>
+
+<script>
+    var infoTemplate = kendo.template($("#templateAddedToCart").html());
+
+    function backLink(e) {
+        @*window.location.href = '@Url.Action("ProductList", "Order")/';*@
+        var urlString = '@Url.Action("ProductList", "Order")/@ViewBag.CategoryIdsSelected?searchText=@ViewBag.SearchText&searchTextDescription=@ViewBag.SearchTextDescription';
+        window.location.href = urlString;
+    }
+
+    function grabIcon(extension) {
+        switch (extension) {
+            case '.jpg':
+            case '.img':
+            case '.png':
+            case '.gif':
+                return "jpg.png";
+            case '.doc':
+            case '.docx':
+                return "doc.png";
+            case '.csv':
+            case '.xls':
+            case '.xlsx':
+                return "xls.png";
+            case '.pdf':
+                return "pdf.png";
+            case '.zip':
+            case '.rar':
+                return "zip.png";
+            default:
+                return "default.png";
+        }
+    }
+
+    $(function() {
+        // Add icon class for the product file
+        var productFile = $("#fileProduct")
+        if (productFile.parent('a').attr('href').indexOf('/default.png') > 0) {
+            $("#rowDigitalDownload").attr("style", "display:none");
+        }
+        else {
+            productFile.attr('src', '/Content/Defaults/Web/' + grabIcon("@Path.GetExtension(Model.FileRelativePath)"));
+        }
+
+
+        $("#QtyOrdered").val(@Model.MinQty);
+
+        $("#QtyOrdered").change(function (e)
+        {
+            var qty = e.target.value;
+            if (qty > @Model.MaxQty && @Json.Encode(Model.EnableMaxQty))
+                $("#QtyOrderedError").text("Enter " + @Model.MaxQty + " or less");
+            else if (qty < @Model.MinQty && @Json.Encode(Model.EnableMinQty))
+                $("#QtyOrderedError").text("Enter " + @Model.MinQty + " or more");
+            else $("#QtyOrderedError").text("");
+        });
+    });
+
+
+
+    function addToCart(event) {
+        var wnd = $("#AddedToCart").data("kendoWindow");
+        var data = $("#QtyOrdered").val();
+        var model = @Html.Raw(Json.Encode(Model));
+
+        if (data > 0
+            && (data <= @Model.MaxQty || ! @Json.Encode(Model.EnableMaxQty))
+            && (data >= @Model.MinQty || ! @Json.Encode(Model.EnableMinQty))) {
+            $("#QtyOrderedError").text("");
+
+            $.post("/Order/Cart_AddItem", { qtyOrdered: data, productId: @Model.Id }, function (data2) {
+                if (data2.result == "Error") {
+                    alert(data2.message)
+                }
+                else {
+                    alert("Product Added to Cart")
+                    $("#spanCartCount").text(data2.totItemsInCart);
+                    @*promptdata = { LowLevel: data, PickPackCode: "@Model.PickPackCode", ShortDesc: "@Json.Encode(Model.ShortDesc)" };
+                    wnd.content(infoTemplate(promptdata));
+                    wnd.center().open();
+                    setTimeout(function () {
+                        window.location.href = '@Url.Action("ProductDetail", "Order")/'
+                    }, 1000)*@
+
+                }
+            });
+        }
+    }
+
+
+</script>

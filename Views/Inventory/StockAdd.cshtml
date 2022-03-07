@@ -1,0 +1,910 @@
+﻿@using StoreFront2.Models;
+@using StoreFront2.Data;
+@using StoreFront2.ViewModels;
+@using StoreFront2.Helpers;
+@model StoreFront2.ViewModels.ProductViewModel
+
+@{
+    var access = new UserPermission();
+    var usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+    }
+}
+
+<style>
+    .k-textbox {
+        width: 100%;
+    }
+</style>
+
+<div class="container">
+    <div class="col-md-2">
+        <button class="btn btn-success" onclick="backLink(event)">Back to List</button>
+    </div>
+    <div class="col-md-10">
+
+        <p class="text-success">@ViewBag.StatusMessage</p>
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div>
+
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                <div class="panel with-nav-tabs panel-default">
+                    <div class="panel-heading">
+                        <ul class="nav nav-tabs">
+                            <li class="active"><a href="#tab1default" data-toggle="tab">Create New Product</a></li>
+                            <li><a href="#tab3default" data-toggle="tab">Categories</a></li>
+                            <li><a href="#tab4default" data-toggle="tab">Images</a></li>
+                            <li><a href="#tabfiles" data-toggle="tab">Files</a></li>
+                        </ul>
+                    </div>
+                    <div class="panel-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade in active" id="tab1default">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <div class="col-md-4">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <div class="col-md-offset-2 col-md-10">
+                                                    <input id="btnSave" type="submit" value="Save" class="btn btn-success" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="k-card k-card-body">
+                                    <div class="form-horizontal">
+
+                                        @Html.HiddenFor(model => model.Id)
+                                        @Html.HiddenFor(model => model.PickPackCode)
+                                        @Html.HiddenFor(model => model.ImageRelativePath)
+                                        @Html.HiddenFor(model => model.FileRelativePath)
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.ProductCode, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.ProductCode, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.ProductCode, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Upc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Upc, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Upc, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.ShortDesc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.TextAreaFor(model => model.ShortDesc, 2, 100, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.ShortDesc, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.LongDesc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.TextAreaFor(model => model.LongDesc, 5, 100, new { htmlAttributes = new { @class = "form-control" } })
+                                                @*@Html.EditorFor(model => model.LongDesc, new { htmlAttributes = new { @class = "form-control" } })*@
+                                                @Html.ValidationMessageFor(model => model.LongDesc, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Weight, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Weight, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Weight, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Length, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Length, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Length, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Width, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Width, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Width, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Height, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Height, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Height, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Restricted, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Restricted, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Restricted, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+
+                                        @{ if (_setting.DisplayProductPrices == 1)
+                                            {
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.SellPrice, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.EditorFor(model => model.SellPrice, new { htmlAttributes = new { @class = "form-control" } })
+                                                        @Html.ValidationMessageFor(model => model.SellPrice, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+
+                                        @{ if (_setting.DisplayProductPrices == 1)
+                                            {
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.SellPriceCAD, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.EditorFor(model => model.SellPriceCAD, new { htmlAttributes = new { @class = "form-control" } })
+                                                        @Html.ValidationMessageFor(model => model.SellPriceCAD, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+
+                                        @*<div class="form-group">
+            @Html.LabelFor(model => model.Uom, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @(Html.Kendo().DropDownListFor(model => model.Uom)
+                                .OptionLabel("Select Unit of Measure")
+                                .DataTextField("Acronym")
+                                .DataValueField("Acronym")
+                                .HtmlAttributes(new { style = "width: 150px;" })
+                                .DataSource(ds =>
+                                {
+                                    ds.Read("GetUoms", "Inventory");
+                                })
+                )
+                @Html.ValidationMessageFor(model => model.Uom, "", new { @class = "text-danger" })
+            </div>
+        </div>*@
+
+                                        @Html.HiddenFor(model => model.CreatedBy)
+                                        @Html.HiddenFor(model => model.DateCreated)
+                                        @Html.HiddenFor(model => model.UserName)
+                                        @Html.HiddenFor(model => model.UserId)
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.MinQty, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-5">
+                                                @Html.EditorFor(model => model.MinQty, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.MinQty, "", new { @class = "text-danger" })
+                                            </div>
+                                            <div class="checkbox col-md-5">
+                                                @Html.EditorFor(model => model.EnableMinQty)
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.MaxQty, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-5">
+                                                @Html.EditorFor(model => model.MaxQty, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.MaxQty, "", new { @class = "text-danger" })
+                                            </div>
+                                            <div class="checkbox col-md-5">
+                                                @Html.EditorFor(model => model.EnableMaxQty)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="tab-pane fade" id="tab3default">
+                                <div class="row">
+                                    <div class="col-md-8">
+
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        @*<div class="col-md-6">
+                                        </div>
+                                        <div class="col-md-6">
+                                            @{if (access.InventoryItemModify == 1)
+                                                {
+                                                    <input id="btnSaveCategory" type="submit" value="Save" class="btn btn-success" />
+                                                }
+                                            }
+                                        </div>*@
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <span class="close">&times;</span>
+                                            <h4>Please Select Categories</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <table border="2" cellpadding="2" cellspacing="2" width="70%">
+                                                <tr>
+                                                    <th><b>Category Name</b></th>
+                                                    <th><b>Description</b></th>
+                                                    <th></th>
+                                                </tr>
+                                                @foreach (CategoryViewModel c in ViewBag.availableCategories)
+                                                {
+                                                    <tr>
+                                                        <td>@c.Name</td>
+                                                        <td>@c.Desc</td>
+                                                        <td>
+                                                            <input type="checkbox" id="check_@c.Id" name="chkbox" value="@c.Id" onclick="onAddCategories()">
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </table>
+                                            @*<input id="btnSave" type="submit" value="Add Categories" class="btn btn-success" />*@
+                                        </div>
+                                    </div>
+                                    @*<div class="k-card k-card-body">
+            <h4>Categories</h4>
+            <hr />
+            <div class="col-md-10">
+                <table>
+                    <tr>
+                        <th>
+                            Available
+                        </th>
+                        <th>
+                            Associated
+                        </th>
+                    </tr>
+                    <tr>
+                        <td valign="top">
+                            @(Html.Kendo().ListBox()
+                                .Name("categorySource")
+                                .Toolbar(t =>
+                                {
+                                    t.Position(Kendo.Mvc.UI.Fluent.ListBoxToolbarPosition.Right);
+                                    t.Tools(tools => tools.TransferTo().TransferFrom());
+                                })
+                                .ConnectWith("categorySelected")
+                                .Selectable(ListBoxSelectable.Multiple)
+                                .DataTextField("Name")
+                                .DataValueField("Id")
+                                .DataSource(source =>
+                                {
+                                    source.Read(read =>
+                                    {
+                                        read.Action("ToolbarTemplate_Categories", "Inventory", new { Id = Model.Id });
+                                    });
+                                }).Events(ev =>
+                                {
+                                    ev.DataBound("setSelectedValue");
+                                })
+                            )
+                        </td>
+                        <td valign="top">
+                            @(Html.Kendo().ListBox()
+                            .Name("categorySelected")
+                            .Selectable(ListBoxSelectable.Multiple)
+                            .DataTextField("Name")
+                            .DataValueField("Id")
+                            .BindTo(new List<CategoryViewModel>
+                            ())
+                            )
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>*@
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tab4default">
+                                <div class="row">
+                                    <div class="col-md-8">
+
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <div class="col-md-6">
+                                        </div>
+                                        <div class="col-md-6">
+                                            @{if (access.InventoryItemModify == 1)
+                                                {
+                                                    @*<input id="btnSaveImage" type="submit" value="Save" class="btn btn-success" />*@
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="k-card k-card-body">
+                                        <div class="row">
+                                            <div class="col-md-10">
+                                                @(Html.Kendo().Upload()
+                                                    .Name("images")
+                                                    .TemplateId("imageTemplate")
+                                                    .HtmlAttributes(new { aria_label = "files" })
+                                                        .Async(a => a
+                                                                    .Save("Async_Save", "Inventory")
+                                                                    .Remove("Async_Remove", "Inventory"))
+                                                        .Events(e => e.Success("onUploadSuccess").Upload("onImageUpload")
+                                                    )
+                                            )
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="k-card k-card-body">
+                                        <div class="row" id="rowImage">
+                                            <table id="tableImage">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="min-width: 75px">Image</th>
+                                                        <th style="min-width: 150px">Uploaded Date</th>
+                                                        <th style="min-width: 150px">Uploaded By</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbodyImage">
+                                                    @if (Model.ProductImages != null)
+                                                    {
+                                                        foreach (ProductImageVM pi in Model.ProductImages)
+                                                        {
+                                                            <tr id="imgProductRow_@pi.Id">
+                                                                <td class="col-sm-1 col-md-2">
+                                                                    <a class="thumbnail pull-left" href="/@Url.Content("Content/" + _storeFrontName + "/Images/" + Path.GetFileName(pi.RelativePath ?? "default.png"))" target="_blank">
+                                                                        <img id="imgProduct_@pi.Id"
+                                                                             class="media-object"
+                                                                             src="/@Url.Content("Content/" + _storeFrontName + "/Images/" + Path.GetFileName(pi.RelativePath ?? "default.png"))"
+                                                                             alt="@Path.GetFileName(pi.RelativePath ?? "")"
+                                                                             title="@Path.GetFileName(pi.RelativePath ?? "")"
+                                                                             onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Images/default.png")'"
+                                                                             style="width: 72px; height: 72px;" />
+                                                                    </a>
+                                                                </td>
+                                                                <td class="col-sm-1 col-md-2">
+                                                                    @pi.DateCreated.ToString("MM/dd/yyyy")
+                                                                </td>
+                                                                <td class="col-sm-1 col-md-2">
+                                                                    @pi.UserName
+                                                                </td>
+                                                                <td class="col-sm-1 col-md-2">
+                                                                    <button type="button" id="btnRemove" class="btn btn-danger" onclick="btnRemoveImageOnClick(this, @pi.Id)">
+                                                                        <span class="glyphicon glyphicon-remove"></span> Remove
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tabfiles">
+                                <div class="row">
+                                    <div class="col-md-8">
+
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <div class="col-md-6">
+                                        </div>
+                                        <div class="col-md-6">
+                                            @{if (access.InventoryItemModify == 1)
+                                                {
+                                                    @*<input id="btnSave" type="submit" value="Save" class="btn btn-success" />*@
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="k-card k-card-body">
+                                        <h4>Digital Download</h4>
+                                    </div>
+                                    <br />
+                                    <div class="k-card k-card-body">
+                                        <div class="row">
+                                            @(Html.Kendo().Upload()
+.Name("files")
+.TemplateId("fileTemplate")
+.HtmlAttributes(new { aria_label = "files" })
+.Async(a => a
+.Save("Async_Save_Files", "Inventory")
+.Remove("Async_Remove_Files", "Inventory"))
+.Events(e => e.Success("onUploadFileSuccess").Upload("onFileUpload"))
+                                                )
+                                        </div>
+                                        <br />
+                                        <div class="k-card k-card-body">
+                                            <div class="row" id="rowFile">
+                                                <table id="tableFile">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="min-width: 75px">File</th>
+                                                            <th style="min-width: 150px">Uploaded Date</th>
+                                                            <th style="min-width: 150px">Uploaded By</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tbodyFile">
+                                                        @if (Model.ProductFiles != null)
+                                                        {
+                                                            foreach (ProductFileVM pf in Model.ProductFiles)
+                                                            {
+                                                                <tr id="fileProductRow_@pf.Id">
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        <a class="thumbnail pull-left" href="/@Url.Content("Content/" + _storeFrontName + "/Images/" + Path.GetFileName(pf.RelativePath ?? "default.png"))" target="_blank">
+                                                                            <img id="fileProduct_@pf.Id"
+                                                                                 class="media-object"
+                                                                                 src="/Content/Defaults/Web/@pf.FileIcon"
+                                                                                 alt="@Path.GetFileName(pf.RelativePath ?? "")"
+                                                                                 title="@Path.GetFileName(pf.RelativePath ?? "")"
+                                                                                 onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Files/default.png")'"
+                                                                                 style="width: 72px; height: 72px;" />
+                                                                        </a>
+                                                                    </td>
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        @pf.DateCreated.ToString("MM/dd/yyyy")
+                                                                    </td>
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        @pf.UserName
+                                                                    </td>
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        <button type="button" id="btnRemoveFile" class="btn btn-danger" onclick="btnRemoveFileOnClick(this, @pf.Id)">
+                                                                            <span class="glyphicon glyphicon-remove"></span> Remove
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <br />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script id="imageTemplate" type="text/x-kendo-template">
+    <span class='k-progress'></span>
+</script>
+
+<script id="fileTemplate" type="text/x-kendo-template">
+    <span class='k-progress'></span>
+</script>
+
+<script type="text/javascript">
+    function addExtensionClass(extension) {
+        switch (extension) {
+            case '.jpg':
+            case '.img':
+            case '.png':
+            case '.gif':
+                return "img-file";
+            case '.doc':
+            case '.docx':
+                return "doc-file";
+            case '.xls':
+            case '.xlsx':
+                return "xls-file";
+            case '.pdf':
+                return "pdf-file";
+            case '.zip':
+            case '.rar':
+                return "zip-file";
+            default:
+                return "default-file";
+        }
+    }
+</script>
+
+<script>
+
+        function onAddCategories() {
+
+        var Array = [];
+        var checkboxes = document.querySelectorAll('input[name=chkbox]:checked');
+
+        for (var i = 0; i < checkboxes.length; i++) {
+            //alert(checkboxes[i].value);
+            Array.push(checkboxes[i].value);
+        }
+        //alert(JSON.stringify(Array));
+
+        $.ajax({
+            url: '@Url.Action("Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify(Array)
+        })
+        }
+
+    function backLink(e) {
+        window.location.href = '@Url.Action("Stock", "Inventory")/';
+    }
+
+    function setSelectedValue() {
+        @*$.ajax({
+            datatype: "json",
+            url: '@Url.Action("ToolbarTemplate_Categories_SetSelected", new { Id = Model.Id })',
+            success: function (data) {
+                $("#category").data("kendoMultiSelect").value(data);
+            }
+        })*@
+
+        $.ajax({
+            datatype: "json",
+            url: '@Url.Action("ToolbarTemplate_Categories_SetSelected", new { Id = Model.Id })',
+            success: function (data) {
+                var cat = kendo.data.Model.define({
+                    id: "Id",
+                    fields: {
+                        "Name": {
+                            type: "string"
+                        }
+                    }
+                });
+                var listBoxSource = $("#categorySource").data("kendoListBox");
+                var listBoxSelected = $("#categorySelected").data("kendoListBox");
+                newdata = new kendo.data.DataSource();
+                for (var d = 0; d < data.length; d++) {
+                    listBoxSelected.add(new cat({
+                        Id: data[d].Id,
+                        Name: data[d].Name
+                    }
+                        ))
+                };
+            }
+        })
+    }
+
+    @*function onCategoryChange() {
+        $.ajax({
+            url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify({categories: $("#category").data("kendoMultiSelect").dataItems(), product: {Id: @Model.Id}})
+        })
+    }*@
+
+    function onAddCategory() {
+        kendo.confirm("Category Added")
+        .done(function() {
+            var data = $("#categorySelected").data("kendoListBox").dataItems();
+            $.ajax({
+                url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({categories: $("#categorySelected").data("kendoListBox").dataItems(), product: {Id: @Model.Id}})
+            })
+        })
+    }
+
+    function onRemoveCategory() {
+        kendo.confirm("Remove Category?")
+        .done(function() {
+            var data = $("#categorySelected").data("kendoListBox").dataItems();
+            $.ajax({
+                url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({categories: $("#categorySelected").data("kendoListBox").dataItems(), product: {Id: @Model.Id}})
+            })
+        })
+    }
+
+    function btnRemoveImageOnClick(e, imageId) {
+        kendo.confirm("Remove Image?")
+        .done(function() {
+            $.ajax({
+                url: '@Url.Action("Async_Remove")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({fileNames: [$("#ImageRelativePath").val()], imageId: imageId, productId: @Model.Id })
+            });
+            $("#ImageRelativePath").val("Content/ImpDynamics/Images/default.png");
+            $(".media-object").each(function() {
+                this.src = "/@Url.Content("Content/ImpDynamics/Images/default.png")";
+                this.alt = "Default";
+                this.title = "Default";
+                this.parentElement.href = "/@Url.Content("Content/ImpDynamics/Images/default.png")";
+            });
+            $(e).parents('tr').remove();
+
+        })
+    }
+
+    function btnRemoveFileOnClick(e, imageId) {
+        kendo.confirm("Are you sure you want to remove this file?")
+        .done(function() {
+            $.ajax({
+                url: '@Url.Action("Async_Remove_Files")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({fileNames: [$("#FileRelativePath").val()], imageId: imageId, productId: @Model.Id })
+            });
+            $("#FileRelativePath").val("/@Url.Content("Content/ImpDynamics/Files/default.png")");
+            $(e).parents('tr').remove();
+
+        })
+    }
+
+    function onUploadSuccess(e) {
+        if (e.response.result == 'Error') {
+            alert("Error : " + e.response.message);
+        }
+        else {
+            kendo.alert("Upload Completed");
+            $(".k-upload-status").each(function (index, item) {
+                $(item).remove();
+            });
+            $(".k-upload-files").each(function (index, item) {
+                $(item).remove();
+            })
+            var path = e.response.imageRelativePath;
+            $("#ImageRelativePath").val(path);
+
+            $(".media-object").each(function() {
+                var path = $("#ImageRelativePath").val();
+
+                this.src="/"+path;
+                this.alt=path.substr(path.lastIndexOf('/')+1);
+                this.title=path.substr(path.lastIndexOf('/')+1);
+                this.parentElement.href="/"+path;
+            });
+
+            var imageTable = document.getElementById("tbodyImage");
+
+                var row = document.createElement('tr');
+                row.setAttribute('id', 'imgProductRow_' + e.response.productcImageId);
+                row.innerHTML = '' +
+                '<td class="col-sm-1 col-md-2">' +
+                '<a class="thumbnail pull-left" href="/'+path+'" target="_blank">' +
+                '<img id="imgProduct_' + e.response.productImageId +'"' +
+                'src="/' + path + '"' +
+                'alt="' + path.substr(path.lastIndexOf('/')+1) + '"' +
+                'title="' + path.substr(path.lastIndexOf('/') + 1) + '"' +
+                'onerror="src=\'/Content/@_storeFrontName/Images/default.png\'"' +
+                'style="width: 72px; height: 72px;" />' +
+                '</a>' +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                e.response.productImageDateCreated +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                e.response.productImageUserName +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                '<button type="button" id="btnRemove" class="btn btn-danger" onclick="btnRemoveImageOnClick(this,' + e.response.productImageId + ')">' +
+                '<span class="glyphicon glyphicon-remove"></span> Remove' +
+                '</button>' +
+                '</td>';
+
+            $("#tbodyImage").children('tr').remove();
+            imageTable.appendChild(row);
+
+            $(".k-upload-status").each(function (index, item) {
+                $(item).remove();
+            });
+            $(".k-upload-files").each(function (index, item) {
+                $(item).remove();
+            })
+        }
+    }
+
+    function onUploadFileSuccess(e) {
+        if (e.response.result == 'Error') {
+            alert("Error : " + e.response.message);
+        }
+        else {
+            var path = e.response.fileRelativePath;
+            if (e.operation == "remove") {
+                $("#FileRelativePath").val("/@Url.Content("Content/ImpDynamics/Files/default.png")");
+
+                var fileObject = $("#fileProduct");
+                var fileName = "default.png";
+                fileObject.attr('src', '/Content/Defaults/Web/default.png');
+                fileObject.attr('alt', fileName);
+                fileObject.attr('title', fileName);
+                fileObject.parent('a').attr('href', "/" + "Content/ImpDynamics/Files/default.png");
+            }
+            else {
+                $("#FileRelativePath").val(path);
+
+                kendo.alert("Upload Completed");
+
+                var fileTable = document.getElementById("tbodyFile");
+                var fileName = path.substr(path.lastIndexOf('/') + 1);
+                var fileExt = fileName.substr(fileName.lastIndexOf('.'));
+
+                var row = document.createElement('tr');
+                row.setAttribute('id', 'fileProductRow_' + e.response.productFileId);
+                row.innerHTML = '' +
+                '<td class="col-sm-1 col-md-2">' +
+                '<a class="thumbnail pull-left" href="/'+path+'" target="_blank">' +
+                '<img id="fileProduct_' + e.response.productFileId +'"' +
+                'src="/Content/Defaults/Web/' + grabIcon(fileExt) + '"' +
+                'alt="' + path.substr(path.lastIndexOf('/')+1) + '"' +
+                'title="' + path.substr(path.lastIndexOf('/') + 1) + '"' +
+                'onerror="src=\'/Content/@_storeFrontName/Files/default.png\'"' +
+                'style="width: 72px; height: 72px;" />' +
+                '</a>' +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                e.response.productFileDateCreated +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                e.response.productFileUserName +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                '<button type="button" id="btnRemove" class="btn btn-danger" onclick="btnRemoveFileOnClick(this,' + e.response.productFileId + ')">' +
+                '<span class="glyphicon glyphicon-remove"></span> Remove' +
+                '</button>' +
+                '</td>';
+
+                $("#tbodyFile").children('tr').remove();
+                fileTable.appendChild(row);
+
+                //setTimeout(function () {
+                $(".k-upload-status").each(function (index, item) {
+                    $(item).remove();
+                });
+                $(".k-upload-files").each(function (index, item) {
+                    $(item).remove();
+                })
+                //}, 1000)
+
+            }
+        }
+    }
+
+    function onImageUpload(e) {
+        e.data = {productId: "@Model.Id"}
+    }
+
+    function onFileUpload(e) {
+        e.data = {productId: "@Model.Id"}
+    }
+
+    $("#btnSave").click(function () {
+        //sessionStorage.setItem("CategorySelected", $("#category").data("kendoMultiSelect").dataItems());
+        $.ajax({
+            url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify({categories: $("#categorySelected").data("kendoListBox").dataItems(), product: {Id: @Model.Id}})
+        })
+    })
+
+    $("#btnSaveCategory").click(function () {
+        $.ajax({
+            url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify({ categories: $("#categorySelected").data("kendoListBox").dataItems(), product: { Id: '@Model.Id' } })
+        })
+    })
+
+    $("#btnSaveImage").click(function () {
+        $.ajax({
+            url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify({ categories: $("#categorySelected").data("kendoListBox").dataItems(), product: { Id: '@Model.Id' } })
+        })
+    })
+
+    $("#MinQty").on("change", function (e) {
+        var minqtycheck = $('#EnableMinQty');
+        var minval = parseInt($("#MinQty").val());
+        var maxval = parseInt($("#MaxQty").val());
+        if (minval > maxval) {
+            $("#MinQty").val(maxval);
+        }
+        if (minval <= 0) {
+            if (minqtycheck.is(":checked") == true) {
+                alert("Min Qty Must Be Greater Than Zero. Please Try Again");
+                $("#MinQty").val(1);
+            }
+        } else {
+            $("#MaxQty").attr("min", minval);
+        }
+    })
+
+    $("#MaxQty").on("change", function (e) {
+        var minval = parseInt($("#MinQty").val());
+        var maxval = parseInt($("#MaxQty").val());
+        if (maxval < minval) {
+            $("#MaxQty").val(minval);
+        }
+        $("#MinQty").attr("max", maxval);
+    })
+
+    $('#EnableMinQty').on('click', function (e) {
+        var minval = parseInt($("#MinQty").val());
+        if (this.checked) {
+            if (minval <= 0) {
+                alert("Min Qty Must Be Greater Than Zero. Please Try Again");
+                this.checked = false;
+            }
+        }
+    })
+
+    $('#EnableMaxQty').on('click', function (e) {
+        var minval = parseInt($("#MinQty").val());
+        var maxval = parseInt($("#MaxQty").val());
+        if (this.checked) {
+            if (maxval <= 0) {
+                alert("Max Qty Must Be Greater Than Zero. Please Try Again");
+                this.checked = false;
+            } else if (maxval < minval) {
+                alert("Max Qty Must Be Greater Than Min Qty. Please Try Again");
+                this.checked = false;
+            }
+        }
+
+    })
+
+    function grabIcon(extension) {
+        switch (extension) {
+            case '.jpg':
+            case '.img':
+            case '.png':
+            case '.gif':
+                return "jpg.png";
+            case '.doc':
+            case '.docx':
+                return "doc.png";
+            case '.csv':
+            case '.xls':
+            case '.xlsx':
+                return "xls.png";
+            case '.pdf':
+                return "pdf.png";
+            case '.zip':
+            case '.rar':
+                return "zip.png";
+            default:
+                return "default.png";
+        }
+    }
+
+
+
+</script>

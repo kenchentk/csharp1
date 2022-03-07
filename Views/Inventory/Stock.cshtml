@@ -1,0 +1,429 @@
+﻿@using StoreFront2.Data;
+@model StoreFront2.ViewModels.FilterViewModel
+
+@{
+    var access = new UserPermission();
+    var usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+    }
+    ViewBag.Title = "Stock";
+}
+
+<style>
+    .k-grid {
+        font-size: 14px;
+        line-height: 2;
+        padding: 16px 24px;
+        border-width: 0 0 0 0;
+    }
+
+    .k-grid-header {
+        background-color: green;
+        color: white;
+        border-color: white;
+    }
+
+    .k-grid k-grid-content {
+        border-color: white;
+    }
+    /*.k-grid-header .k-header {
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .k-grid-content {
+            font-size: 10pt;
+            font-weight: normal;
+        }
+
+        .image {
+            width: 120px;
+        }
+
+        .product {
+            width: 350px;
+        }
+
+        .pickpack {
+            display: block;
+            font-size: 1.2em;
+        }
+
+        .proddesc {
+            display: block;
+            font-size: 1.0em;
+            padding-top: 0.5em;
+        }
+
+        td.image {
+            text-align: center;
+        }
+
+        .k-grid-header .k-header {
+            padding: 10px 20px;
+        }
+
+        .k-grid td {
+            background: -moz-linear-gradient(top, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.15) 100%);
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0.05)), color-stop(100%,rgba(0,0,0,0.15)));
+            background: -webkit-linear-gradient(top, rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.15) 100%);
+            background: -o-linear-gradient(top, rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.15) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.15) 100%);
+            padding: 5px;
+        }
+
+        .k-grid .k-alt td {
+            background: -moz-linear-gradient(top, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 100%);
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0.2)), color-stop(100%,rgba(0,0,0,0.1)));
+            background: -webkit-linear-gradient(top, rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.1) 100%);
+            background: -o-linear-gradient(top, rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.1) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.1) 100%);
+        }*/
+</style>
+
+@{
+    <div class="container">
+        <div class="col-md-12">
+            <div class="panel-body">
+                <p style="font-size:x-large">Stock</p>
+                <div class="k-card k-card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <h5 style="font-family:sans-serif">I WOULD LIKE TO</h5>
+                        </div>
+                        @{if (access.InventoryItemModify == 1)
+                            {
+                                <div class="col-md-10">
+                                    @(Html.Kendo().DropDownList()
+                                                .Name("myAction")
+                                                .DataTextField("Text")
+                                                .DataValueField("Value")
+                                                .BindTo(new List<SelectListItem>()
+                                                    {
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Choose",
+                                                            Value = ""
+                                                        },
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Add Product",
+                                                            Value = "actionAddProduct"
+                                                        },
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Export to Excel",
+                                                            Value = "actionExportToExcel"
+                                                        }
+                                                    })
+                                                    .Value("")
+                                    )
+
+                                    <button class="btn btn-success" onclick="onMyAction(event)">Execute Action</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-md-10">
+                                    @(Html.Kendo().DropDownList()
+                                                .Name("myAction")
+                                                .DataTextField("Text")
+                                                .DataValueField("Value")
+                                                .BindTo(new List<SelectListItem>()
+                                                    {
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "I want to",
+                                                            Value = ""
+                                                        },
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Export to Excel",
+                                                            Value = "actionExportToExcel"
+                                                        }
+                                                    })
+                                                    .Value("")
+                                    )
+
+                                    <button class="btn btn-success" onclick="onMyAction(event)">Execute Action</button>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                <br />
+                <div class="k-card k-card-body">
+                    <h5 class="k-card-title">Search Product By :</h5>
+                    <div class="row" style="padding-bottom: 5px">
+                        <div class="col-md-4">
+                            Product<br />
+                            <input class="k-textbox" id="searchByProduct" style="width: 100%" />
+                        </div>
+                        <div class="col-md-4">
+                            Description<br />
+                            <input class="k-textbox" id="searchByDesc" style="width: 100%" />
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row" style="padding-bottom: 5px">
+                        <div class="col-md-4">
+                            Status<br />
+                            @(Html.Kendo().DropDownList()
+                                                .Name("searchByStatus")
+                                                .DataTextField("Text")
+                                                .DataValueField("Value")
+                                                .BindTo(new List<SelectListItem>()
+                                                    {
+                                                        new SelectListItem() { Text = "View All", Value = "" },
+                                                        new SelectListItem() { Text = "Active", Value = "Active" },
+                                                        new SelectListItem() { Text = "Inactive", Value = "Inactive" }
+                                                    })
+                                                    .Value("Active")
+                            )
+                        </div>
+                        <div class="col-md-8">
+                            Categories<br />
+                            @(Html.Kendo().MultiSelect()
+                                            .Name("categories")
+                                            .Placeholder("Select categories ...")
+                                            .DataTextField("Name")
+                                            .DataValueField("Id")
+                                            .AutoBind(false)
+                                            .DataSource(ds =>
+                                            {
+                                                ds.Read("ToolbarTemplate_Categories", "Inventory");
+                                            })
+                            )
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button id="btnSearch" class="btn btn-success" onclick="onSearch(event)">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="k-card k-card-body">
+                    <div class="row">
+                        @(Html.Kendo().Grid<StoreFront2.ViewModels.ProductViewModel>()
+                                          .Name("grid")
+                                          //.HtmlAttributes(new { style = "height:2800px;" })
+                                          .Columns(columns =>
+                                          {
+                                              columns.Bound(c => c.Id).Hidden(true);
+                                              columns
+                                              .Bound(c => c.Upc)
+                                              .Title("Image")
+                                              .Width(50)
+                                              .ClientTemplate(@"<img src='/" + Url.Content("#:data.ImageRelativePath#")
+                                                                + @"' onerror = ""src = '" + Url.Content("~/Content/" + _storeFrontName + "/Images/default.png")
+                                                                + @"' "" alt ='#: data.ProductCode #' width='100px' height='100px' />"); // style='width: 100px; height: 100px;' />");
+                                              columns.Bound(c => c.ProductCode).Title("Product");
+                                              columns.Bound(c => c.ShortDesc).Title("Desc");
+                                              //columns.Bound(c => c.EMSQty).Title("Qty").Hidden(_setting.DisplayInventoryAvailability == 0 || _setting.DisplayInventoryAvailabilityFor != "Actual Inventory");
+                                              columns.Bound(c => c.EMSQty).Title("Qty");
+                                              //columns.Bound(c => c.SellPrice).Title("Price (USD)").Hidden(_setting.DisplayProductPrices != 1 || true);
+                                              //columns.Bound(c => c.SellPriceCAD).Title("(CAD)").Hidden(_setting.DisplayProductPrices != 1 || true);
+                                              columns.Bound(c => c.SellPrice).Title("Price (USD)").Hidden(_setting.DisplayProductPrices != 1);
+                                              columns.Bound(c => c.SellPriceCAD).Title("(CAD)").Hidden(_setting.DisplayProductPrices != 1);
+                                              columns.Bound(c => c.MinQty).Title("Min Qty");
+                                              columns.Bound(c => c.MaxQty).Title("Max Qty");
+                                              columns.Bound(c => c.CategoriesDescString).Hidden(true);
+                                              //columns.Bound(c => c.EstRestockDate).Title("Est. Restocked").Hidden(_setting.DisplayInventoryAvailability == 0 || _setting.DisplayInventoryAvailabilityFor != "Actual Inventory").ClientTemplate(@"#if(EMSQty<=0){# #=kendo.toString(EstRestockDate, 'MM/dd/yyyy')# #}#").HtmlAttributes(new { @class = "text-danger" });
+                                              //.Format("{0:MM/dd/yyyy}");
+                                              //columns.Bound(c => c.Uom).Title("Unit of Measure");
+                                          })
+
+                                           .DataSource(dataSource => dataSource
+                                              .Ajax()
+                                              .Model(model => model.Id(p => p.Id))
+                                              .Read(read => read.Action("Products_Read", "Inventory"))
+                                              .PageSize(50)
+                                              .Filter(filter =>
+                                              {
+                                                  // Also set initial status
+                                                  if (Model.Status != null)
+                                                      filter.Add(f => f.Status).IsEqualTo((short)(Model.Status == "Active" ? 1 : 0));
+                                                  else
+                                                      filter.Add(f => f.Status).IsEqualTo(1);
+                                              })
+                                          )
+                                          .Selectable(selectable =>
+                                          {
+                                              selectable.Mode(GridSelectionMode.Single);
+                                              selectable.Type(GridSelectionType.Row);
+                                          })                                          
+                                          .Pageable(p => p
+                                            .ButtonCount(2))
+                                          .Events(events =>
+                                          {
+                                              events.Change("onChange");
+                                              events.ExcelExport("customExcelExport");
+                                          })
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+        @*</div>
+
+            </div>
+                @*        </div>
+                    </div>*@
+
+    </div>
+}
+
+
+<script>
+
+    $(function () {
+        var grid = $("#grid");
+        grid.find(".k-grid-toolbar").on("click", ".k-pager-refresh", function (e) {
+            e.preventDefault();
+            grid.data("kendoGrid").dataSource.read();
+        });
+
+    });
+</script>
+
+<script>
+    function categoriesChange() {
+        var value = this.value(),
+            grid = $("#grid").data("kendoGrid");
+
+        if (value) {
+            grid.dataSource.filter({ field: "CategoriesString", operator: "contains", value: "[" + value + "]" });
+
+        } else {
+            grid.dataSource.filter({});
+        }
+    }
+</script>
+
+<script>
+
+    function onChange(e) {
+        var grid = e.sender;
+        var currentDataItem = grid.dataItem(this.select());
+        window.location.href = '@Url.Action("StockDetail", "Inventory")/' + currentDataItem.Id;
+    }
+
+    function addProduct(e) {
+        window.location.href = '@Url.Action("StockAdd", "Inventory")';
+    }
+
+    function onMyAction(e) {
+        var myAction = $("#myAction").val();
+
+        if (myAction == "actionExportToExcel") {
+            var grid = $('#grid').data('kendoGrid');
+            grid.setOptions({
+                excel: {
+                    allPages: true
+                }
+            });
+            grid.saveAsExcel();
+        }
+
+        if (myAction == "actionAddProduct") {
+            window.location.href = '@Url.Action("StockAdd", "Inventory")';
+        }
+
+    }
+
+    function customExcelExport(e) {
+        var sheet = e.workbook.sheets[0];
+        for (var rowIndex = 1; rowIndex < sheet.rows.length; rowIndex++) {
+            var row = sheet.rows[rowIndex];
+        }
+
+        if (e.sender._exporting === undefined) {
+            e.sender._exporting = true;
+        }
+        if (e.sender._exporting) {
+            e.sender.showColumn("Id");
+            e.sender.showColumn("CategoriesDescString");
+            e.preventDefault();
+
+            setTimeout(function () {
+                e.sender._exporting = false;
+                e.sender.saveAsExcel();
+            });
+        } else {
+            e.sender._exporting = true;
+            e.sender.hideColumn("Id");
+            e.sender.hideColumn("CategoriesDescString");
+        }
+    }
+
+    function onSearch(e) {
+        var grid = $('#grid').data('kendoGrid');
+
+        // blank filter and push additional parameters
+        var filter = { logic: 'and', filters: [] };
+
+        var valueByProduct = $('#searchByProduct').val();
+        var valueByDesc = $('#searchByDesc').val();
+        var valueByStatus = $('#searchByStatus').val();
+        var valueByCategories = $("#categories").data("kendoMultiSelect").dataItems()
+
+        if (valueByProduct.length > 0) {
+            filter.filters.push({
+                field: "ProductCode",
+                operator: 'contains',
+                value: valueByProduct
+            });
+        }
+
+        if (valueByDesc.length > 0) {
+            filter.filters.push({
+                field: 'ShortDesc',
+                operator: 'contains',
+                value: valueByDesc
+            })
+        }
+
+        if (valueByStatus == 'Active') {
+            filter.filters.push({
+                field: 'Status',
+                operator: 'eq',
+                value: 1
+            })
+        }
+
+        if (valueByStatus == 'Inactive') {
+            filter.filters.push({
+                field: 'Status',
+                operator: 'eq',
+                value: 0
+            })
+        }
+
+        if (valueByCategories.length > 0) {
+            for (var i = 0; i < valueByCategories.length; i++) {
+                filter.filters.push({
+                    field: 'CategoriesString',
+                    operator: 'contains',
+                    value: "[" + valueByCategories[i].Id + "]"
+                });
+            };
+        };
+
+        grid.dataSource.filter(filter);
+
+
+
+    }
+
+
+</script>

@@ -1,0 +1,806 @@
+﻿@using StoreFront2.Data;
+@model IEnumerable<StoreFront2.ViewModels.CartViewModel>
+@{
+    var _access = new UserPermission();
+    var _usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    var _site = new StoreFront2.Models.Site();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        _access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        _usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+        _site = (StoreFront2.Models.Site)Session["Site"];
+    }
+}
+<style>
+
+    .k-input {
+        width: 50%;
+        font-size: 1.5em;
+    }
+
+    .general-label {
+        font-size: 0.8em;
+        padding-right: 1em;
+    }
+
+    .k-button-icon {
+        color: #fff;
+        background-color: #808080;
+        border-color: #4cae4c;
+    }
+
+    .k-grid {
+        height: 100%;
+        padding: 0px;
+    }
+</style>
+<div class="container">
+    <h3>Check Out</h3>
+    <hr />
+    <h4>Items In Cart</h4>
+    <div class="k-card">
+        <div class="k-card-body" style="padding-top:20px">
+            <div class="col-xs-12">
+                <div class="panel panel-info">
+                    <div class="panel-body">
+                        @foreach (StoreFront2.ViewModels.CartViewModel objItem in Model)
+                        {
+                            if (@objItem.DisplayOrder == 0 || @objItem.DisplayOrder == 1)
+                            {
+                            <div id="lineitem" class="row">
+                                <input type="text" style="display:none" id="txtId" value="@objItem.Id" />
+                                <input type="text" style="display:none" id="txtProductId" value="@objItem.ProductId" />
+                                <div class="col-md-2 col-sm-2 col-xs-4">
+                                    <a class="thumbnail pull-left" href="@Url.Action("ProductDetail", "Order")/@objItem.ProductId">
+                                        <img class="media-object" src="~/@Url.Content(@objItem.ImageRelativePath)" onerror="src='@Url.Content("~/Content/" + _storeFrontName + "/Images/default.png")'" style="width: 72px; height: 72px;">
+                                    </a>
+                                </div>
+                                <div class="col-md-4 col-sm-4 col-xs-8">
+                                    <div class="row">
+                                        <h4><small><a href="@Url.Action("ProductDetail", "Order")/@objItem.ProductId">@objItem.ShortDesc</a></small></h4>
+                                    </div>
+                                    <div class="row" style="padding-top:5px">
+                                        @*Fulfilled By Vendor
+                                            @(Html.Kendo().Switch().Name("IsFulfilledByVendor_"+objItem.Id).Checked(objItem.IsFulfilledByVendor).Events(ev => ev.Change("onFulfilledByVendor")))*@
+                                        @* For future need when we can have several vendors per item @(Html.Kendo().DropDownList()
+                                            .Name("VendorId")
+                                            .OptionLabel("Must Select Vendor")
+                                            .DataTextField("Alias")
+                                            .DataValueField("Id")
+                                            .DataSource(source =>
+                                            {
+                                                source.Read(read => { read.Action("GetVendorsForProduct", "Inventory", new { Id = objItem.ProductId }); });
+                                            })
+                                            .Events(e =>
+                                            {
+                                                e.Change("onVendorIdChange");
+                                            }))*@
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-sm-6 col-xs-12">
+                                    <div class="col-md-4 col-sm-6 col-xs-6 text-right">
+                                        @{ if (_setting.DisplayProductPrices == 1)
+                                            {
+                                                if (_site.CurrencyFlag == 2)
+                                                {
+                                                    <h6><strong>@objItem.SellPriceCAD.ToString("c")<span class="text-muted"> x</span></strong></h6>
+                                                }
+                                                else
+                                                {
+                                                    <h6><strong>@objItem.SellPrice.ToString("c")<span class="text-muted"> x</span></strong></h6>
+                                                }
+                                            }
+                                        }
+                                    </div>
+                                    <div class="input-group col-md-4 col-sm-4 col-xs-4">
+                                        <input type="text" class="form-control input-sm" id="txtQty" value="@objItem.Count" style="width:50px;" readonly>
+                                        <button id="btnEditSave" type="button" class="btn btn-link btn-sm" onclick="onChangeQty(@objItem.Id, @objItem.ProductId, this)">
+                                            <span id="btnEditSaveIcon" class="glyphicon glyphicon-pencil" title="Update"></span>
+                                        </button>
+                                        <button id="btnCancel" type="button" class="btn btn-link btn-sm" onclick="onBtnCancel(@objItem.ShortDesc, @objItem.ProductId, this)" style="display:none">
+                                            <span id="btnCancelIcon" class="glyphicon glyphicon-remove" title="Cancel"></span>
+                                        </button>
+                                        <button type="button" class="btn btn-link btn-sm" onclick="onDelete(@objItem.Id)">
+                                            <span class="glyphicon glyphicon-trash" title="Remove"></span>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="hdnCartId" value="@objItem.CartId" />
+                                </div>
+                            </div>
+                            <hr />
+                            @*<tr>
+                                    <td class="col-sm-8 col-md-6">
+                                        <div class="media">
+                                            <a class="thumbnail pull-left" href="#"> <img class="media-object" src="~/@Url.Content(objItem.ImageRelativePath)" o onerror="src='@Url.Content("~/Content/"+_storeFrontName+"/Images/default.png")'" style="width: 72px; height: 72px;"> </a>
+                                            <div class="media-body">
+                                                <h4 class="media-heading"><a href="#">@objItem.ShortDesc</a></h4>
+                                                <span>Status: </span><span class="text-success"><strong>In Stock</strong></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="col-sm-1 col-md-1" style="text-align: center">
+                                        <input type="text" class="form-control" id="txtQty" value="@objItem.Count" onchange="onChangeQty(@objItem.Id, @objItem.ProductId, this)">
+                                    </td>
+                                    <td class="col-sm-1 col-md-1 text-center"><strong>0</strong></td>
+                                    @{ if (_setting.DisplayProductPrices == 1)
+                                        {
+                                            <td class="col-sm-1 col-md-1 text-center"><strong>$0.00</strong></td>
+                                        }
+                                    }
+                                    <td class="col-sm-1 col-md-1">
+                                        <button type="button" id="btnRemove" class="btn btn-danger" onclick="onDelete(@objItem.Id)">
+                                            <span class="glyphicon glyphicon-remove"></span> Remove
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <input type="hidden" id="hdnCartId" value="@objItem.CartId" />
+                                    </td>
+                                </tr>*@
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <h4>Details</h4>
+    <div class="row">
+        <div class="col-md-8">
+            <div id="kCardHeader" class="k-card">
+                <div class="k-card-body">
+                    <form class="form" role="form" autocomplete="off">
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">Purchase Order Number</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().PONumber, new { htmlAttributes = new { @class = "form-control", style = "min-width: 200%;" } })
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <h4>Ship To Address</h4>
+    @*<button class="btn btn-success btn-sm" onclick="onSelectShipToAddress(event)">Select Ship To</button>*@
+    <div class="row">
+        <div class="col-md-8">
+            <div id="kCardShipTo" class="k-card">
+                <div class="k-card-body">
+                    <form class="form" role="form" autocomplete="off">
+                        @Html.HiddenFor(model => model.FirstOrDefault().UserAddressId)
+                        @Html.HiddenFor(model => model.FirstOrDefault().AddressAlias)
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">Company Name</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().Company, new { htmlAttributes = new { @class = "form-control", style = "min-width: 200%;" } })
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">First / Last Name</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.EditorFor(model => model.FirstOrDefault().LastName, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">Address</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().Address1, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.EditorFor(model => model.FirstOrDefault().Address2, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">City/State/Zip</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().City, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.EditorFor(model => model.FirstOrDefault().State, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.EditorFor(model => model.FirstOrDefault().Zip, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">Country</label>
+                            <div class="col-md-10">
+                                @(Html.Kendo().DropDownList().Name("Country")
+                                                            .DataValueField("Value")
+                                                            .DataTextField("Text")
+                                                            .BindTo(ViewBag.Countries)
+                                                            .Value(Model.FirstOrDefault().Country)
+                                )
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">Phone</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().Phone, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">Email</label>
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.FirstOrDefault().Email, new { htmlAttributes = new { @class = "form-control" } })
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-md-2 col-form-label form-control-label" style="padding-top:5px">SET THIS AS MY DEFAULT SHIP TO </label>
+                            <div class="col-md-10">
+                                @(Html.Kendo().Switch().Name("SetAsDefaultShipTo").Checked(Model.FirstOrDefault().SetAsDefaultShipTo))
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="accordion" id="accordionShipToAddress">
+                <div class="k-card">
+                    <div class="k-card-header" id="cardHeaderShipToAddress">
+                        <h2 class="mb-0">
+                            <button id="btnUserAddress" class="btn btn-success btn-sm collapsed" onclick="onBtnUserAddressClick(event)" type="button" data-toggle="collapse" data-target="#collapseShipToAddress" aria-expanded="true" aria-controls="collapseShipToAddress">
+                                USE ALT ADDRESS
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseShipToAddress" class="collapse" aria-labelledby="headingShipToAddress" data-parent="#accordionShipToAddress">
+                        <div class="k-card-body">
+                            <div class="row" style="padding-bottom:5px">
+                                <div class="col-md-12">
+                                    Search Ship To :
+                                    <input class="k-textbox" id="searchByAddress" />
+                                    <a id="btnSearchShipTo" class="btn btn-default btn-sm" onclick="onSearchShipTo(event)">
+                                        <span id="btnSearchShipToIcon" class="glyphicon glyphicon-search"></span>
+                                    </a>
+                                    <a id="btnResetSearchShipTo" class="btn btn-default btn-sm" onclick="onResetSearchShipTo(event)">
+                                        <span id="btnResetSearchShipToIcon" class="glyphicon glyphicon-refresh"></span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div>
+                                @(Html.Kendo().Grid<StoreFront2.ViewModels.UserAddressViewModel>()
+                                                                                  .Name("gridShipTo")
+                                                                                  .Columns(columns =>
+                                                                                  {
+                                                                                      columns.Bound(c => c.Id).Hidden();
+                                                                                      columns.Bound(c => c.AddressAlias).Title("Alias");
+                                                                                      columns.Bound(c => c.Company);
+                                                                                      columns.Bound(c => c.FirstName).Title("First");
+                                                                                      columns.Bound(c => c.LastName).Title("Last");
+                                                                                      columns.Bound(c => c.Address1).Title("Address");
+                                                                                      columns.Bound(c => c.City);
+                                                                                      columns.Bound(c => c.State).Title("State");
+                                                                                      columns.Bound(c => c.Zip);
+                                                                                      columns.Bound(c => c.Country).ClientTemplate("#=Country#");
+                                                                                      columns.Bound(c => c.DefaultShipTo).Title("Default").ClientTemplate("<input type='checkbox' #=(DefaultShipTo??false) ? checked='checked' : '' # disabled='true' />");
+                                                                                      columns.Command(command => command.Custom(" ").Template("<button type=\"button\" class=\"k-button k-button-icon k-grid-\" onclick=\"onSelectMe(this)\"><span class=\"k-icon k-i-check\"></span></button>")).Title("Select");
+                                                                                  })
+                                                                                  .Selectable(selectable =>
+                                                                                  {
+                                                                                      selectable.Mode(GridSelectionMode.Single);
+                                                                                      selectable.Type(GridSelectionType.Row);
+                                                                                  })
+                                                                                  .Pageable()
+                                                                                  .DataSource(dataSource => dataSource
+                                                                                        .Ajax()
+                                                                                        .Model(c => c.Id(u => u.Id))
+                                                                                        .Read(read => read.Action("UserAddresses_Read", "Manage").Data("onGridShipToRead"))
+                                                                                        .PageSize(15)
+                                                                                  )
+                                )
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div id="kCardLast10" class="k-card" style="height:417px;">
+                <div class="k-card-header">
+                    <h5>Last Ship To Addresses Used</h5>
+                </div>
+                <div class="k-card-body" style="padding:0px">
+                    @(Html.Kendo().Grid<StoreFront2.ViewModels.UserAddressViewModel>()
+                            .Name("gridLastTenShipTos")
+                            .Columns(columns =>
+                            {
+                                columns.Command(command => command.Custom(" ").Template("<button type=\"button\" class=\"k-button k-button-icon k-grid-\" onclick=\"onSelectMe(this)\"><span class=\"k-icon k-i-check\"></span></button>")).Title("Select").Width(50);
+                                columns.Bound(c => c.Id).Hidden();
+                                columns.Bound(c => c.AddressAlias).Width(50).Title("Alias");
+                                columns.Bound(c => c.Company).Width(50);
+                                columns.Bound(c => c.FirstName).Width(50).Title("First");
+                                columns.Bound(c => c.LastName).Width(50).Title("Last");
+                                columns.Bound(c => c.Address1).Width(50).Title("Address");
+                                columns.Bound(c => c.City).Width(50);
+                                columns.Bound(c => c.State).Width(50).Title("State");
+                                columns.Bound(c => c.Zip).Width(50);
+                                columns.Bound(c => c.Country).Width(50).ClientTemplate("#=Country#");
+                            })
+                            .Scrollable(s => s.Enabled(true))
+                            .Pageable()
+                            .Selectable(selectable =>
+                            {
+                                selectable.Mode(GridSelectionMode.Single);
+                                selectable.Type(GridSelectionType.Row);
+                            })
+                            .DataSource(dataSource => dataSource
+                                .Ajax()
+                                .Model(c => c.Id(u => u.Id))
+                                .Read(read => read.Action("GetLastTenShipTos_Read", "Order"))
+                                .PageSize(10)
+                            )
+                    )
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <h4>Shipping Method</h4>
+    <div class="k-card">
+        <div class="k-card-body" style="padding-top:20px">
+            <div class="col-sm-12 col-md-10">
+                @(Html.Kendo().DropDownList()
+                    .Name("SelectedShipMethod")
+                    .DataValueField("Value")
+                    .DataTextField("Text")
+                    .BindTo(ViewBag.AllowedShipMethods)
+                )
+            </div>
+        </div>
+        <br />
+    </div>
+    <hr />
+    <h4>Order Notes </h4>
+    <div class="k-card">
+        <div class="k-card-body" style="padding-top:20px">
+            @*<div class="col-sm-12 col-md-10 col-md-offset-1">*@
+            <div class="col-sm-12 col-md-10">
+                <textarea id="cartnote" name="cartnote" rows="5" style="width:100%; height:125px"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="padding-top:20px">
+        <div class="col-sm-12 col-md-10">
+            @{if (_access.OrderCreate == 1)
+                {
+                    if (((StoreFront2.Models.Site)Session["Site"]).IsPunchOutUser)
+                    {
+                        <button type="button" class="btn btn-success btn-sm" onclick="onSubmitPunchOut()">
+                            PunchOut Order <span class="glyphicon glyphicon-play"></span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-success btn-sm" onclick="onSubmit()">
+                            Submit Order <span class="glyphicon glyphicon-play"></span>
+                        </button>
+                    }
+                }
+            }
+        </div>
+    </div>
+</div>
+<!-- #region SearchShipTo -->
+<div class="row" style="padding-top:20px">
+    @(Html.Kendo().Window()
+                            .Name("windowSelectShipTo")
+                            .Title("Select Ship To Address")
+                            .Visible(false)
+                            .Modal(true)
+                            .Width(400)
+    )
+</div>
+<script type="text/x-kendo-template" id="templateSearchShipToAddress">
+    <div class="row">
+        <div class="col-md-12">
+            <input class="k-textbox" id="searchByAddress" />
+            <a id="btnSearchShipTo" class="btn btn-default btn-sm" onclick="onSearchShipTo(event)">
+                <span id="btnSearchShipToIcon" class="glyphicon glyphicon-search"></span>
+            </a>
+            <a id="btnResetSearchShipTo" class="btn btn-default btn-sm" onclick="onResetSearchShipTo(event)">
+                <span id="btnResetSearchShipToIcon" class="glyphicon glyphicon-refresh"></span>
+            </a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <button id="btnSelectShipTo" class="k-button" onclick="onSelectShipTo(event)">Select</button>
+        </div>
+    </div>
+    <div>
+        @(Html.Kendo().Grid<StoreFront2.ViewModels.UserAddressViewModel>()
+                                                                                  .Name("gridShipTo")
+                                                                                  .Columns(columns =>
+                                                                                  {
+                                                                                      columns.Bound(c => c.Id).Hidden();
+                                                                                      columns.Bound(c => c.AddressAlias).Title("Alias");
+                                                                                  })
+                                                                                  .DataSource(dataSource => dataSource
+                                                                                        .Ajax()
+                                                                                        .Read(read => read.Action("UserAddresses_Read", "Manage"))
+                                                                                  )
+        )
+    </div>
+</script>
+<!-- #endregion -->
+@*<div class="row">
+        @(Html.Kendo().Grid<StoreFront2.ViewModels.UserAddressViewModel>()
+                                                                          .Name("gridShipTo")
+                                                                          .Columns(columns =>
+                                                                          {
+                                                                              columns.Bound(c => c.Id).Hidden();
+                                                                              columns.Bound(c => c.AddressAlias).Title("Alias");
+                                                                              columns.Bound(c => c.Company);
+                                                                              columns.Bound(c => c.FirstName).Title("First");
+                                                                              columns.Bound(c => c.LastName).Title("Last");
+                                                                              columns.Bound(c => c.Address1).Title("Address");
+                                                                              columns.Bound(c => c.City);
+                                                                              columns.Bound(c => c.State).Title("State");
+                                                                              columns.Bound(c => c.Zip);
+                                                                              columns.Bound(c => c.Country).ClientTemplate("#=Country#");
+                                                                              columns.Bound(c => c.DefaultShipTo).Title("Default").ClientTemplate("<input type='checkbox' #=(DefaultShipTo??false) ? checked='checked' : '' # disabled='true' />");
+                                                                          })
+                                                                          .Selectable(selectable =>
+                                                                          {
+                                                                              selectable.Mode(GridSelectionMode.Single);
+                                                                              selectable.Type(GridSelectionType.Row);
+                                                                          })
+                                                                          .Pageable()
+                                                                          .DataSource(dataSource => dataSource
+                                                                                .Ajax()
+                                                                                .Model(c => c.Id(u => u.Id))
+                                                                                .Read(read => read.Action("UserAddresses_Read", "Manage"))
+                                                                                .PageSize(10)
+                                                                          )
+        )
+    </div>*@
+<script>
+    function onSubmit() {
+        var cartId = $("#hdnCartId").val();
+        var cartNote = $("#cartnote").val();
+        var poNumber = $("#PONumber").val();
+        var methodId = $("#SelectedShipMethod").val();
+        var userAddressId = $("#UserAddressId").val();
+        var addressAlias = $("#AddressAlias").val();
+        var company = $("#Company").val();
+        var firstName = $("#FirstName").val();
+        var lastName = $("#LastName").val();
+        var address1 = $("#Address1").val();
+        var address2 = $("#Address2").val();
+        var city = $("#City").val();
+        var state = $("#State").val();
+        var zip = $("#Zip").val();
+        var country = $("#Country").val();
+        var phone = $("#Phone").val();
+        var email = $("#Email").val();
+        var setAsDefaultShipTo = $("#SetAsDefaultShipTo").data("kendoSwitch").value();
+
+        $.post("/Order/Cart_SubmitOrderAsync", {
+            CartId: cartId,
+            CartNote: cartNote,
+            PONumber: poNumber,
+            ShipMethodId: methodId,
+            UserAddressId: userAddressId,
+            AddressAlias: addressAlias,
+            Company: company,
+            FirstName: firstName,
+            LastName: lastName,
+            Address1: address1,
+            Address2: address2,
+            City: city,
+            State: state,
+            Zip: zip,
+            Country: country,
+            Phone: phone,
+            Email: email,
+            SetAsDefaultShipTo: setAsDefaultShipTo
+        }, function (data) {
+            if (data.result == "Error")
+                alert(data.message + ". Please check your order.");
+            else {
+                alert("Order " + data.ordernumber + " has been submitted");
+                window.location.href = '@Url.Action("ProductList", "Order")/';
+            }
+
+        });
+    }
+
+    function onSubmitPunchOut() {
+        var cartId = $("#hdnCartId").val();
+        var cartNote = $("#cartnote").val();
+        var methodId = $("#SelectedShipMethod").val();
+        var userAddressId = $("#UserAddressId").val();
+        var addressAlias = $("#AddressAlias").val();
+        var company = $("#Company").val();
+        var firstName = $("#FirstName").val();
+        var lastName = $("#LastName").val();
+        var address1 = $("#Address1").val();
+        var address2 = $("#Address2").val();
+        var city = $("#City").val();
+        var state = $("#State").val();
+        var zip = $("#Zip").val();
+        var country = $("#Country").val();
+        var phone = $("#Phone").val();
+        var email = $("#Email").val();
+        var setAsDefaultShipTo = $("#SetAsDefaultShipTo").data("kendoSwitch").value();
+
+        $.post("/Order/Cart_SubmitPunchOutOrderAsync", {
+            CartId: cartId,
+            CartNote: cartNote,
+            ShipMethodId: methodId,
+            UserAddressId: userAddressId,
+            AddressAlias: addressAlias,
+            Company: company,
+            FirstName: firstName,
+            LastName: lastName,
+            Address1: address1,
+            Address2: address2,
+            City: city,
+            State: state,
+            Zip: zip,
+            Country: country,
+            Phone: phone,
+            Email: email,
+            SetAsDefaultShipTo: setAsDefaultShipTo
+        }, function (data) {
+            if (data.result == "Error")
+                alert(data.message + ". Please check your order.");
+            else {
+                alert("Order " + data.ordernumber + " has been submitted");
+                window.location.href = '@Url.Action("ProductList", "Order")/';
+            }
+
+        });
+    }
+
+    function onDelete(Id) {
+        var cartId = $("#hdnCartId").val();
+        $.post("/Order/Cart_RemoveItem", { Id: Id }, function (data) {
+            window.location.href = '@Url.Action("Cart_CheckoutProcess", "Order")/' + '?cartId=' + cartId;
+        });
+    }
+
+    var prevQty = 0;
+
+    function onBtnCancel(Id, productId, obj) {
+        var iconEdit = $(obj).closest('#lineitem').find("#btnEditSaveIcon");
+        var btnCancel = $(obj).closest('#lineitem').find("#btnCancel");
+        var txtQtyElement = $(obj).closest('#lineitem').find("#txtQty");
+
+        iconEdit.removeClass("glyphicon-ok");
+        iconEdit.addClass("glyphicon-pencil");
+
+        txtQtyElement.val(prevQty);
+        txtQtyElement.prop('readonly', true);
+        btnCancel.css('display', 'none');
+    }
+
+    function onVendorIdChange(e) {
+        var txtIdElement = e.sender.element.closest('#lineitem').find("#txtId");
+        var txtProductIdElement = e.sender.element.closest('#lineitem').find("#txtProductId");
+        var boolIsFulfilledByVendor = e.checked;
+        //var vendorIdElement = e.sender.element.closest('#lineitem').find("#VendorId").data("kendoDropDownList");
+        //$.post("/Order/Cart_UpdateItem", { Id: txtIdElement.val(), ProductId: txtProductIdElement.val(), Count: txtQtyValue , IsFulfilledByVendor: boolIsFulfilledByVendor, VendorId: vendorIdElement.value() }, function (response) {
+        $.post("/Order/Cart_UpdateItem", { Id: txtIdElement.val(), ProductId: txtProductIdElement.val(), Count: txtQtyValue, IsFulfilledByVendor: boolIsFulfilledByVendor}, function (response) {
+            if (response != null) {
+                if (response.result == "Error") {
+                    alert(response.message);
+                }
+            } else {
+                alert("Something went wrong");
+            }
+        });
+    }
+
+    function onChangeQty(Id, productId, obj) {
+        var iconEdit = $(obj).closest('#lineitem').find("#btnEditSaveIcon");
+        var iconCancel = $(obj).closest('#lineitem').find("#btnCancelIcon");
+        var btnEdit = $(obj).closest('#lineitem').find("#btnEditSave");
+        var btnCancel = $(obj).closest('#lineitem').find("#btnCancel");
+        var txtQtyElement = $(obj).closest('#lineitem').find("#txtQty");
+
+        if (iconEdit.attr('class') == "glyphicon glyphicon-pencil") {
+            iconEdit.removeClass("glyphicon-pencil");
+            iconEdit.addClass("glyphicon-ok");
+
+            $(obj).closest('#lineitem').find("#txtQty").prop('readonly', false);
+            btnCancel.css('display', 'inline-block');
+            prevQty = $(obj).closest('#lineitem').find('#txtQty').val();
+        }
+        else {
+            var txtQty = $(obj).closest('#lineitem').find('#txtQty');
+            var txtQtyValue = parseInt(txtQty.val());
+            $.post("/Order/Cart_UpdateItem", { Id: Id, ProductId: productId, Count: txtQtyValue }, function (response) {
+                if (response != null) {
+                    if (response.result == "ErrorMax") {
+                        var feedbackMessage = "The total qty for " + response.productcode + " exceeds the maximum qty allowed (" + response.maxqty + ") per order for this item. Please check your qty / cart and try again.";
+                        //alert("Qty ordered for " + response.productcode + " more than maximum allowed (" + response.maxqty + ")")
+                        alert(feedbackMessage);
+                        $(txtQty).val(response.maxqty);
+                    }
+                    else if (response.result == "ErrorMin") {
+                        var feedbackMessage = "The total qty for " + response.productcode + " less than minimum qty allowed (" + response.minqty + ") per order for this item. Please check your qty / cart and try again.";
+                        //alert("Qty ordered for " + response.productcode + " less than minimum allowed (" + response.minqty + ")")
+                        alert(feedbackMessage);
+                        $(txtQty).val(response.minqty);
+                    }
+                    else if (response.result == "Error") {
+                        alert(response.message);
+                    }
+                    else {
+                        var feedbackMessage = "Cart Updated";
+                        alert(feedbackMessage);
+
+                        iconEdit.removeClass("glyphicon-ok");
+                        iconEdit.addClass("glyphicon-pencil");
+                        txtQtyElement.prop('readonly', true);
+
+                        btnCancel.css('display', 'none');
+                    }
+                } else {
+                    alert("Something went wrong");
+                }
+            });
+        }
+    }
+
+    function onSelectShipToAddress(e) {
+        e.preventDefault();
+
+        var wnd = $("#windowSelectShipTo").data("kendoWindow");
+        var templateSearchShipToAddress = kendo.template($("#templateSearchShipToAddress").html());
+
+        //wnd.content(templateSearchShipToAddress);
+        wnd.center().open();
+
+    }
+
+    function onResetSearchShipTo(e) {
+        $('#searchByAddress').val('');
+        onSearchShipTo(e);
+    }
+
+    function onSearchShipTo(e) {
+        var grid = $('#gridShipTo').data('kendoGrid');
+
+        // blank filter and push additional parameters
+        var filter = { logic: 'and', filters: [] };
+        var filterAddressCityStateZip = { logic: 'or', filters: [] };
+
+        //var valueByName = $('#searchByName').val();
+        var valueByAddress = $('#searchByAddress').val();
+
+        if (valueByAddress.length > 0) {
+            filterAddressCityStateZip.filters.push({
+                field: "AddressAlias",
+                operator: "contains",
+                value: valueByAddress
+            });
+            filterAddressCityStateZip.filters.push({
+                field: "Address1",
+                operator: "contains",
+                value: valueByAddress
+            });
+            filterAddressCityStateZip.filters.push({
+                field: "Address2",
+                operator: "contains",
+                value: valueByAddress
+            });
+            filterAddressCityStateZip.filters.push({
+                field: "City",
+                operator: "contains",
+                value: valueByAddress
+            });
+            filterAddressCityStateZip.filters.push({
+                field: "State",
+                operator: "eq",
+                value: valueByAddress
+            });
+            filterAddressCityStateZip.filters.push({
+                field: "Zip",
+                operator: "eq",
+                value: valueByAddress
+            });
+            filterAddressCityStateZip.filters.push({
+                field: "Country",
+                operator: "eq",
+                value: valueByAddress
+            });
+            filter.filters.push(filterAddressCityStateZip);
+        }
+
+        grid.dataSource.filter(filter);
+
+    }
+
+    function onShipToAddressRowChange(e) {
+        var grid2 = $('#gridShipTo').data('kendoGrid');
+        var grid = e;
+        var selectedrow = grid.select();
+        var currentDataItem = grid.dataItem(selectedrow);
+        var selectedAddressId = currentDataItem.Id;
+
+        $("#UserAddressId").val(currentDataItem.Id);
+        $("#AddressAlias").val(currentDataItem.AddressAlias);
+        $("#Company").val(currentDataItem.Company);
+        $("#FirstName").val(currentDataItem.FirstName);
+        $("#LastName").val(currentDataItem.LastName);
+        $("#Address1").val(currentDataItem.Address1);
+        $("#Address2").val(currentDataItem.Address2);
+        $("#City").val(currentDataItem.City);
+        $("#State").val(currentDataItem.State);
+        $("#Zip").val(currentDataItem.Zip);
+        $("#Country").data("kendoDropDownList").value(currentDataItem.Country);
+        $("#Phone").val(currentDataItem.Phone);
+        $("#Email").val(currentDataItem.Email);
+        $("#SetAsDefaultShipTo").data("kendoSwitch").value(currentDataItem.DefaultShipTo);
+
+        var sectionShipToGrid = $("#collapseShipToAddress");
+        sectionShipToGrid.removeClass("in");
+
+        grid.dataSource.read();
+    }
+
+    function onSelectMe(e) {
+        //e.preventDefault();
+        //var dataItem = this.dataItem($(e.currentTarget).closest('tr'));
+        var grid = $(e).closest('.k-grid').data('kendoGrid');
+        var dataItem = grid.dataItem($(e).closest('tr'));
+        grid.select($(e).closest('tr'));
+        onShipToAddressRowChange(grid);
+    }
+
+    function onGridShipToRead() {
+        return {
+            selectedAddressId: $("#UserAddressId").val()
+        }
+    }
+
+    function onBtnUserAddressClick(e) {
+        //var last10 = $("#kCardLast10");
+        //var shipTo = $("#kCardShipTo");
+
+        //last10.css("height", shipTo.css("height"));
+
+    }
+
+    $(function () {
+        $("#Country").val('@Model.FirstOrDefault().Country');
+        $("#Company").css("width", "300px");
+     //   $("#CompanyAlias").css("width", "300px");
+
+        // hide the vendor id if not necessary
+        $("#VendorId").each(function (i, e) {
+            var txtProductIdElement = $(e).closest('#lineitem').find("#txtProductId");
+            //var boolIsFulfilledByVendor = $(e).closest('#lineitem').find("#IsFulfilledByVendor").data("kendoSwitch").value();
+            //var vendorIdElement = $(e).closest('#lineitem').find("#VendorId").data("kendoDropDownList");
+            //if (boolIsFulfilledByVendor == "true") {
+            //    vendorIdElement.wrapper.show();
+            //}
+            //else {
+            //    vendorIdElement.wrapper.hide();
+            //}
+        })
+
+
+        //var last10 = $("#kCardLast10");
+        //var shipTo = $("#kCardShipTo");
+        //last10.css("height", shipTo.css("height"));
+    })
+
+    $(window).resize(function () {
+        //var gridElement = $("#gridLastTenShipTos"),
+        //    newHeight = gridElement.innerHeight(),
+        //    otherElements = gridElement.children().not(".k-grid-content"),
+        //    otherElementsHeight = 0;
+
+        //otherElements.each(function () {
+        //    otherElementsHeight += $(this).outerHeight();
+        //});
+
+        //gridElement.children(".k-grid-content").height(newHeight - otherElementsHeight);
+    });
+
+</script>

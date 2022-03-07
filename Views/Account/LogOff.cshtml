@@ -1,0 +1,44 @@
+﻿@using StoreFront2.Data
+@{
+    ViewBag.Title = "Logged Out";
+    var access = new UserPermission();
+    var usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+    }
+}
+
+<div style="background: url('../../Content/@_storeFrontName/Images/RepeatBlackBackground.png');
+        background: url('../../Content/@_storeFrontName/Images/RepeatBlackBackground.png');
+        background-repeat: repeat;
+        background-position: center;
+        background-size: 100%;
+        padding-top: 0px;
+            padding-left: 0px;
+            padding-right: 0px">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <hgroup class="title">
+                <h1 style="color:white">@ViewBag.Title</h1>
+            </hgroup>
+            <p style="color:white">
+                You've successfully logged out.
+            </p>
+            @Html.ActionLink("Back to Login Page", "Login", "Account", new { @style = "color:white" })
+        </div>
+    </div>
+</div>
+<script>
+        $(document).ready(function () {
+            $("body").css("background", "url('../../Content/@_storeFrontName/Images/RepeatBlackBackground.png') repeat")
+                .css("background-position", "center")
+                .css("background-size", "100%")
+        })
+</script>

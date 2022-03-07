@@ -1,0 +1,424 @@
+﻿@model StoreFront2.ViewModels.FilterViewModel
+@using StoreFront2.Data
+@{
+    var _access = new UserPermission();
+    var _usersetting = new UserSetting();
+    var _setting = new SystemSetting();
+    var _storeFrontName = "Defaults";
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        _usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+    }
+}
+<style>
+
+    .k-grid {
+        border-width: 0 0 0 0;
+    }
+
+    .k-grid-header {
+        background-color: green;
+        color: white;
+        border-color: white;
+    }
+
+    .k-grid k-grid-content {
+        border-color: white;
+    }
+
+    .k-grid .k-hierarchy-col {
+        width: 15px;
+    }
+
+    .ordercancelled {
+        background: linear-gradient(rgb(215, 189, 233), rgb(195, 169, 233));
+    }
+
+    .ordershipped {
+        background: linear-gradient(rgb(189, 196, 233), rgb(169, 176, 233));
+        /*background-color: rgb(189, 196, 233);*/
+    }
+
+    .orderreceived {
+        background: linear-gradient(rgb(189, 233, 193), rgb(169, 213, 193));
+        /*background-color: rgb(189, 233, 193);*/
+    }
+
+    .orderpendingshipment {
+        background: linear-gradient(rgb(189, 233, 231), rgb(169, 213, 231));
+        /*background-color: rgb(189, 233, 231);*/
+    }
+</style>
+<div class="container">
+    <div class="col-md-12">
+        <div class="panel-body">
+            <p style="font-size:large">All Archived Orders</p>
+            <div class="k-card k-card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <h5 style="font-family:sans-serif">I WOULD LIKE TO</h5>
+                    </div>
+                    <div class="col-md-10">
+                        @(Html.Kendo().DropDownList()
+                                                        .Name("myAction")
+                                                        .DataTextField("Text")
+                                                        .DataValueField("Value")
+                                                        .BindTo(new List<SelectListItem>()
+                                                            {
+                                                                        new SelectListItem()
+                                                                        {
+                                                                            Text = "Choose",
+                                                                            Value = ""
+                                                                        },
+                                                                        new SelectListItem()
+                                                                        {
+                                                                            Text = "Export to Excel",
+                                                                            Value = "actionExportToExcel"
+                                                                        }
+                                                            })
+                                                            .Value("")
+                        )
+                        <button class="btn btn-success btn-sm" onclick="onMyAction(event)">Execute Action</button>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card k-card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h5>Search Order By</h5>
+                    </div>
+                </div>
+                <div class="row" style="padding-bottom:5px">
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                        Order Number<br />
+                        <input class="k-textbox" id="searchByOrderNumber" style="width:100%;" />
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                        PO Number<br />
+                        <input class="k-textbox" id="searchByPONumber" style="width:100%;" />
+                    </div>
+                    @*<div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+            Ordered By<br />
+            <input class="k-textbox" id="searchByUsername" style="width:100%;" />
+        </div>*@
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                        Username/email<br />
+                        <input class="k-textbox" id="searchByEmail" style="width:100%;" />
+                    </div>
+                    <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3">
+                        Name<br />
+                        <input class="k-textbox" id="searchByName" style="width:100%;" />
+                    </div>
+                </div>
+                <div class="row" style="padding-bottom:5px">
+                    <div class="col-xs-12 col-sm-10 col-md-8 col-lg-6">
+                        Order Date Range<br />
+                        @(Html.Kendo().DateRangePicker()
+                                  .Name("orderDateRange")
+                                  .HtmlAttributes(new { style = "width: 100%" })
+                        )
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <button id="btnSearch" class="btn btn-success btn-sm" onclick="onSearch(event)">Search</button>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card k-card-body">
+                @(Html.Kendo().Grid<StoreFront2.ViewModels.OrderViewModel>()
+                                      .Name("grid")
+                                      .Excel(excel => excel.AllPages(true))
+                                      //.HtmlAttributes(new { style = "height:600px;" })
+                                      .Columns(columns =>
+                                      {
+                                          columns.Bound(c => c.SFOrderNumber).Title("Order Number").Hidden();
+                                          columns.Bound(c => c.Id).Title("Order Number").Width(75);
+                                          columns.Bound(c => c.PONumber).Width(75);
+                                          columns.Bound(c => c.DateCreated).Format("{0:d}").Width(75); // .Format("{0:MM/dd/yyyy}");
+                                          columns.Bound(c => c.Company).Width(75);
+                                          columns.Bound(c => c.FirstName).Width(75);
+                                          columns.Bound(c => c.LastName).Width(75);
+                                          columns.Bound(c => c.City).Width(75);
+                                          columns.Bound(c => c.State).Width(40);
+                                          columns.Bound(c => c.Zip).Width(40);
+                                          columns.Bound(c => c.OrderStatusDesc).Width(75).Title("Status");
+                                          columns.Bound(c => c.UserName).Width(75).Title("Ordered By");
+                                          if (_setting.DisplayOrderValues == 1 && (_setting.DisplayOrderValuesFor == "Everyone" || (_setting.DisplayOrderValuesFor == "Admins Only" && _usersetting.AllowAdminAccess == 1)))
+                                              columns.Bound(c => c.TotalPrice).Format("{0:c}").ClientFooterTemplate("Sum: $#=sum.toFixed(2)#").Width(75);
+                                      })
+                                      .Scrollable(s =>
+                                      {
+                                          s.Height("auto");
+                                          s.Enabled(true);
+                                      })
+                                      .ClientDetailTemplateId("detailTemplate")
+                                      .Selectable(selectable =>
+                                      {
+                                          selectable.Mode(GridSelectionMode.Single);
+                                          selectable.Type(GridSelectionType.Row);
+                                      })
+                                      .Pageable(p => p.ButtonCount(2))
+                                      .DataSource(dataSource => dataSource
+                                          .Ajax()
+                                          .Sort(sort => sort.Add("DateCreated").Descending())
+                                          .Read(read => read.Action("Orders_Read_Archived", "Order"))
+                                          .Filter(filter =>
+                                          {
+                                              if (Model.ShipDateStart != null) filter.Add(f => f.DateShipped).IsGreaterThanOrEqualTo(Model.ShipDateStart);
+                                              if (Model.ShipDateEnd != null) filter.Add(f => f.DateShipped).IsLessThanOrEqualTo(Model.ShipDateEnd);
+
+                                              // Also set initial order status
+                                              if (Model.SelectedStatuses != null && Model.SelectedStatuses.Count() > 0 && Model.SelectedStatuses.Count() <= 7)
+                                              {
+                                                  List<StoreFront2.Models.OrderStatus> osList = Model.SelectedStatuses;
+                                                  // not sure how to tag multiple or with foreach using fluent. do it manually since we have finite number of statuses.
+                                                  if (Model.SelectedStatuses.Count() == 1) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code);
+                                                  if (Model.SelectedStatuses.Count() == 2) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code);
+                                                  if (Model.SelectedStatuses.Count() == 3) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code);
+                                                  if (Model.SelectedStatuses.Count() == 4) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code);
+                                                  if (Model.SelectedStatuses.Count() == 5) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code).Or().IsEqualTo(osList[4].Code);
+                                                  if (Model.SelectedStatuses.Count() == 6) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code).Or().IsEqualTo(osList[4].Code).Or().IsEqualTo(osList[5].Code);
+                                                  if (Model.SelectedStatuses.Count() == 7) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code).Or().IsEqualTo(osList[4].Code).Or().IsEqualTo(osList[5].Code).Or().IsEqualTo(osList[6].Code);
+                                              }
+                                              else
+                                              {
+                                                  filter.Add(f => f.OrderStatus).IsEqualTo("SH").Or().IsEqualTo("CN");
+                                              }
+                                              // Filter the order number
+                                              if (Model.OrderNumber != null) filter.Add(f => f.SFOrderNumber.ToString()).Equals(Model.OrderNumber);
+                                          })
+                                          .Aggregates(ag =>
+                                          {
+                                              ag.Add(c => c.TotalPrice).Sum();
+                                          })
+
+                                      )
+                                      .Events(events =>
+                                      {
+                                          events.Change("onChange");
+                                          events.DataBound("initTemplate");
+                                      })
+                )
+            </div>
+        </div>
+    </div>
+</div>
+<script id="detailTemplate" type="text/kendo-tmpl">
+    @(Html.Kendo().Grid<StoreFront2.ViewModels.ShipmentViewModel>()
+                                                .Name("griddetailshipped_#=Id#") // template expression, to be evaluated in the master context
+                                                .Columns(columns =>
+                                                {
+                                                    columns.Bound(o => o.OrderId).Title("Order Id").Hidden();
+                                                    columns.Bound(o => o.TrackingNumber).Title("Tracking").Encoded(false);
+                                                    columns.Bound(o => o.Carrier).Title("Carrier");
+                                                    columns.Bound(o => o.DateShipped).Title("Date").Format("{0:d}");
+                                                    columns.Bound(o => o.Status).Title("Status").Hidden();
+                                                })
+                                                .ClientDetailTemplateId("detailItemTemplate")
+                                                .DataSource(dataSource => dataSource
+                                                    .Ajax()
+                                                    .PageSize(5)
+                                                    .Read(read => read.Action("OrderDetailShipment_Read", "Order", new { Id = "#=Id#" }))
+                                                )
+                                                .Pageable()
+                                                .Sortable()
+                                                .ToClientTemplate())
+</script>
+<script id="detailItemTemplate" type="text/kendo-tmpl">
+    @(Html.Kendo().Grid<StoreFront2.ViewModels.OrderDetailViewModel>()
+                                                .Name("griddetail_#=OrderId#_#=Id#") // template expression, to be evaluated in the master context
+                                                .Columns(columns =>
+                                                {
+                                                    columns.Bound(o => o.Qty).Title("QTY Shipped").Width(50);
+                                                    columns.Bound(o => o.ProductCode).Title("Product").Width(80);
+                                                    columns.Bound(o => o.ShortDesc).Title("Short Description").Width(350);
+                                                })
+                                                .DataSource(dataSource => dataSource
+                                                    .Ajax()
+                                                    .PageSize(5)
+                                                    .Read(read => read.Action("OrderDetails_Read", "Order", new { Id = "#=OrderId#" }))
+                                                )
+                                                .Pageable()
+                                                .Sortable()
+                                                .ToClientTemplate())
+</script>
+<script>
+
+    function setSelectedValue() {
+        $.ajax({
+            datatype: "json",
+            url: '@Url.Action("OrderStatuses_SetSelected", new { Archived = true })',
+            success: function (data) {
+                $("#orderstatus").data("kendoMultiSelect").value(data);
+            }
+        })
+        onSearch(this.event);
+    }
+
+    function initTemplate(e) {
+        // iterate the table rows and apply custom row and cell styling
+        var rows = e.sender.tbody.children();
+        for (var j = 0; j < rows.length; j++) {
+            var row = $(rows[j]);
+            var dataItem = e.sender.dataItem(row);
+
+            var orderStatus = dataItem.get("OrderStatus");
+
+            row.removeClass("k-alt");
+
+            if (orderStatus == "CN") {
+                row.addClass("ordercancelled");
+            }
+            if (orderStatus == "SH") {
+                row.addClass("ordershipped");
+            }
+            if (orderStatus == "RP") {
+                row.addClass("orderreceived");
+            }
+            if (orderStatus == "IP" || orderStatus == "PS") {
+                row.addClass("orderpendingshipment");
+            }
+        }
+    }
+
+    function onChange(e) {
+        var grid = e.sender;
+        var currentDataItem = grid.dataItem(this.select());
+        window.location.href = '@Url.Action("OrderAllDetail", "Order")/' + currentDataItem.Id;
+    }
+
+    function onMyAction(e) {
+        var myAction = $("#myAction").val();
+
+        if (myAction == "exportToExcel") {
+            var grid = $('#grid').data('kendoGrid');
+            grid.setOptions({
+                excel: {
+                    allPages: true
+                }
+            });
+            grid.saveAsExcel();
+        }
+    }
+
+    function onSearch(e) {
+        var grid = $('#grid').data('kendoGrid');
+
+        // blank filter and push additional parameters
+        var filter = { logic: 'and', filters: [] };
+        var filterStatus = { logic: 'or', filters: [] };
+        var filterUserEmail = { logic: 'or', filters: [] };
+        var filterName = { logic: 'or', filters: [] };
+
+        var valueByOrderNumber = $('#searchByOrderNumber').val();
+        var valueByPONumber = $('#searchByPONumber').val();
+        //var valueByUsername = $('#searchByUsername').val();
+        var valueByEmail = $('#searchByEmail').val();
+        var valueByName = $('#searchByName').val();
+
+        if (valueByOrderNumber.length > 0) {
+            filter.filters.push({
+                field: "Id",
+                operator: 'eq',
+                value: valueByOrderNumber
+            });
+        }
+
+        if (valueByPONumber.length > 0) {
+            filter.filters.push({
+                field: "PONumber",
+                operator: 'contains',
+                value: valueByPONumber
+            })
+        }
+
+        var range = $("#orderDateRange").data("kendoDateRangePicker").range();
+        if (range) {
+            if (range.start) {
+                var startDate = new Date(range.start);
+                startDate.setHours(0);
+                startDate.setMinutes(0);
+                startDate.setSeconds(0);
+            }
+            if (range.end) {
+                var endDate = new Date(range.end);
+                endDate.setHours(23);
+                endDate.setMinutes(59);
+                endDate.setSeconds(59);
+            }
+        }
+
+        if (range) {
+            if (range.start != null) {
+                filter.filters.push({
+                    field: "DateCreated",
+                    operator: 'gte',
+                    value: startDate
+                })
+            }
+            if (range.end != null) {
+                filter.filters.push({
+                    field: "DateCreated",
+                    operator: 'lte',
+                    value: endDate
+                })
+            }
+        }
+
+        //if (valueByUsername.length > 0) {
+        //   filter.filters.push({
+        //        field: "UserName",
+        //        operator: 'contains',
+        //        value: valueByUsername
+        //    });
+        //}
+
+        if (valueByEmail.length > 0) {
+            filterUserEmail.filters.push({
+                field: "Email",
+                operator: 'contains',
+                value: valueByEmail
+            });
+            filterUserEmail.filters.push({
+                field: "UserName",
+                operator: 'contains',
+                value: valueByEmail
+            });
+            filter.filters.push(filterUserEmail);
+        }
+
+        if (valueByName.length > 0) {
+            filterName.filters.push({
+                field: 'FirstName',
+                operator: 'contains',
+                value: valueByName
+            })
+            filterName.filters.push({
+                field: 'LastName',
+                operator: 'contains',
+                value: valueByName
+            })
+            filter.filters.push(filterName);
+        }
+
+        grid.dataSource.filter(filter);
+
+    }
+    $(document).ready(function () {
+        //var filter = $("#orderstatus").data("kendoMultiSelect").value().slice();
+        //filter.push('CN:6', 'SH:5');
+
+        //$("#orderstatus").data("kendoMultiSelect").value([{ code: "CN", id: 6 }, { code: "SH", id: 5 }]);
+        //$("#orderstatus").data("kendoMultiSelect").value(filter);
+        //var statuses = $("#orderstatus").data("kendoMultiSelect").dataItems()
+        //onSearch(this);
+    });
+
+</script>

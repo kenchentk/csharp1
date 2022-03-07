@@ -1,0 +1,8 @@
+﻿@model string
+
+@(Html.Kendo().DropDownListFor(m => m)
+    .DataValueField("Value")
+    .DataTextField("Text")
+    .DataSource(s => { s.Read(read => { read.Action("GetCountries", "Manage"); }); })
+)
+@Html.ValidationMessageFor(m => m)

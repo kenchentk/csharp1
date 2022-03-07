@@ -1,0 +1,146 @@
+﻿@using StoreFront2.Models
+@using StoreFront2.Data
+
+@model LoginViewModel
+
+@{
+    ViewBag.Title = "Log in to " + ViewBag.SiteTitle;
+    var access = new UserPermission();
+    var usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+    }
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+    <style>
+        .form-control {
+            font-size: 1em;
+            height: 30px;
+        }
+
+        .control-label {
+            font-size: 1em;
+        }
+
+        .loginlinks {
+            font-size: 1em;
+        }
+
+        .btn-default {
+        }
+    </style>
+}
+
+@*<div style="background: url('../../Content/@_storeFrontName/Images/RepeatBlackBackground.png');
+    background-repeat: repeat;
+    background-position: center;
+    background-size: 100%;
+    padding-top: 0px;
+        padding-left: 0px;
+        padding-right: 0px">*@
+<div style="padding-top: 0px;
+            padding-left: 0px;
+            padding-right: 0px">
+    <div class="container">
+        <div class="row">
+            <section id="loginForm">
+                @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @*<div class="col-md-4 col-sm-4"></div>*@
+                    <div class="form-group">
+                        <div class="row" style="padding-top:50px; width:100%; display:flex; justify-content:center">
+                            @*<div class="col-lg-4 col-md-4 col-sm-4 col-xs-6">
+                            <img src="../Content/@_storeFrontName/Images/OrderingMadeEasy.png"
+                                 class="img-fluid mx-md-auto"
+                                 style="width: 40%; height: auto; display: block; margin-left:auto; margin-right:auto; padding-bottom:6px" />
+                        </div>*@
+                            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-6">
+                                <img src="@_setting.LogoPath"
+                                     class="img-fluid mx-md-auto"
+                                     style="width: 100%; height:auto; display: block; margin-left:auto; margin-right:auto; padding-bottom:6px" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="width:100%; display:flex; justify-content:center">
+                        <div class="col-lg-3 col-md-4 col-sm-4 col-xs-8">
+                            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="row" style="width:100%; display:flex; justify-content:center">
+                            @*@Html.Label("User Name", new { @class = "col-md-4 col-sm-4 control-label", @style = "color: black" })*@
+                            <div class="col-lg-3 col-md-4 col-sm-4 col-xs-8">
+                                @Html.Label("Username", new { @class = "control-label", @style = "color: black" })
+                                @Html.TextBoxFor(m => m.UserName, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.UserName, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="row" style="width:100%; display:flex; justify-content:center">
+                            @*@Html.Label("Password", new { @class = "col-md-4 col-sm-4 control-label", @style = "color: black" })*@
+                            <div class="col-lg-3 col-md-4 col-sm-4 col-xs-8">
+                                @Html.Label("Password", new { @class = "control-label", @style = "color: black" })
+                                @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+                        <div class="form-group">
+                            <div class="row" style="width:100%; display:flex; justify-content:center">
+                                @*<div class="col-md-4 col-sm-4">*@
+                                @*<input type="submit" value="Log in" class="btn btn-default" style="font-size:0.8em; width: 40%; align-self: center" />*@
+                                <input type="submit" value="Log in" class="btn btn-success" style="font-size:0.8em;" />
+                                @*</div>*@
+                            </div>
+                        </div>
+                }
+            </section>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="row" style="width:100%; display:flex; justify-content:center">
+            @*<div class="col-lg-3 col-md-4 col-sm-4 col-xs-8">*@
+            @Html.ActionLink("Forgot your password?", "ForgotPassword", null, new { @class = "loginlinks", @style = "color:black" })
+            @*</div>*@
+        </div>
+    </div>
+    <div>
+
+        @*<footer class="footer text-center d-flex align-items-center"
+                    style="position: absolute; bottom: 0px;">
+                <div>
+                    <img src="~/Content/Ritas/Images/RitasProductFooter.png" style="width: 40%; max-height: 140px; height: auto; display: block;  margin-left:auto; margin-right:auto">
+                </div>
+            </footer>*@
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+        @*$(document).ready(function () {
+            $("body").css("background", "url('../../Content/@_storeFrontName/Images/RepeatBlackBackground.png') repeat")
+                .css("background-position", "center")
+                .css("background-size", "100%")
+        })*@
+
+        $(function () {
+            $("#headerLogo").hide();
+        })
+    </script>
+
+}

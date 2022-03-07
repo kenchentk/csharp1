@@ -1,0 +1,272 @@
+@using StoreFront2.Data;
+
+@model StoreFront2.ViewModels.MyWindowViewModel
+
+@{
+    var access = new UserPermission();
+    var usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+    }
+}
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<style>
+    .row.heading h2 {
+        color: #fff;
+        font-size: 52.52px;
+        line-height: 95px;
+        font-weight: 400;
+        text-align: center;
+        margin: 0 0 40px;
+        padding-bottom: 20px;
+        text-transform: uppercase;
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .heading.heading-icon {
+        display: block;
+    }
+
+    .padding-lg {
+        display: block;
+        padding-top: 60px;
+    }
+
+    .practice-area.padding-lg {
+        padding-top: 55px;
+    }
+
+    .practice-area .inner {
+        border: 1px solid #999999;
+        text-align: center;
+        margin-bottom: 28px;
+        padding: 40px 25px;
+    }
+
+    .our-webcoderskull .cnt-block:hover {
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
+        border: 0;
+    }
+
+
+
+
+    .our-webcoderskull {
+        background: linear-gradient();
+    }
+
+        .our-webcoderskull .cnt-block {
+            float: left;
+            width: 100%;
+            background: #fff;
+            padding: 30px 20px;
+            text-align: center;
+            border: 2px solid #d5d5d5;
+            margin: 0 0 28px;
+        }
+
+            .our-webcoderskull .cnt-block figure {
+                width: 148px;
+                height: 148px;
+                border-radius: 100%;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+
+
+            .our-webcoderskull .cnt-block h3 {
+                color: #2a2a2a;
+                font-size: 20px;
+                font-weight: 500;
+                padding: 6px 0;
+                text-transform: uppercase;
+            }
+
+                .our-webcoderskull .cnt-block h3 a {
+                    text-decoration: none;
+                    color: #2a2a2a;
+                }
+
+                    .our-webcoderskull .cnt-block h3 a:hover {
+                        color: #337ab7;
+                    }
+
+            .our-webcoderskull .cnt-block p {
+                color: #2a2a2a;
+                font-size: 13px;
+                line-height: 20px;
+                font-weight: 400;
+            }
+</style>
+<div class="container">
+    <section class="our-webcoderskull">
+        <ul class="row-eq-height">
+            <li class="col-md-6">
+                <div class="cnt-block" style="display:@(_setting.BudgetEnforce == 1 ? "block" : "none");">
+                    <h3 style="background:#337ab7;">
+                        Budget Information
+                    </h3>
+                    <div class="row">
+                        <div class="form-horizontal" style="width:100%">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.BudgetLimit, htmlAttributes: new { @class = "control-label col-md-6" })
+                                <div class="col-md-6" style="text-align: left; padding-top:7px">
+                                    @*@(Html.Kendo().NumericTextBox<decimal>().Name("BudgetLimit").Format("c").Spinners(false).Enable(false))*@
+                                    @Model.BudgetLimit.ToString("c")
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.BudgetCurrentTotal, htmlAttributes: new { @class = "control-label col-md-6" })
+                                <div class="col-md-6" style="text-align: left; padding-top:7px">
+                                    @*@(Html.Kendo().NumericTextBox<decimal>().Name("BudgetCurrentTotal").Format("c").Decimals(0).Spinners(false).Enable(false))*@
+                                    @Model.BudgetCurrentTotal.ToString("c")
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.OrdersCountingAgainstBudget, htmlAttributes: new { @class = "control-label col-md-6" })
+                                <div class="col-md-6" style="text-align: left; padding-top:7px">
+                                    @*@(Html.Kendo().NumericTextBox<int>().Name("OrdersCountingAgainstBudget").Format("n0").Spinners(false).Enable(false))*@
+                                    <a href="@Url.Action("Index", "Order", new { OrderDateStart=Model.BudgetLastResetDate })">@Model.OrdersCountingAgainstBudget.ToString("n0") Order(s)</a>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.BudgetCurrentAvailable, htmlAttributes: new { @class = "control-label col-md-6" })
+                                <div class="col-md-6" style="text-align: left; padding-top:7px">
+                                    @*@(Html.Kendo().NumericTextBox<decimal>().Name("BudgetCurrentAvailable").Format("c").Spinners(false).Enable(false))*@
+                                    @Model.BudgetCurrentAvailable.ToString("c")
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.BudgetDaysUntilRefresh, htmlAttributes: new { @class = "control-label col-md-6" })
+                                <div class="col-md-6" style="text-align: left; padding-top:7px">
+                                    @*@(Html.Kendo().NumericTextBox<int>().Name("BudgetDaysUntilRefresh").Format("n0").Spinners(false).Enable(false))*@
+                                    @Model.BudgetDaysUntilRefresh.ToString("n0")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li class="col-md-@(_setting.BudgetEnforce == 1 ? "6" : "12")">
+                <div class="cnt-block">
+                    <h3 style="background:#E8AA56;">
+                        Order Summary
+                    </h3>
+                    <div class="home_groupBox">
+                        <div class="col-lg-3 col-md-3 p-0">
+                            <div class=" box-dashboard bg-blue">
+                                @Html.Label("Orders This Month", htmlAttributes: new { @class = "control-label title_box" })
+                                <div class="box-description" style="text-align: left; padding-top:7px" ">
+                                    <a class="groupHomeCount" href="@Url.Action("Index", "Order", new { OrderDateStart=Model.OrderStatus.MonthFirstDate })"><span>@Model.OrderStatus.TotMonth</span> Order(s)</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 p-0">
+                            <div class=" box-dashboard bg-green">
+                                @Html.Label("Orders This Quarter", htmlAttributes: new { @class = "control-label title_box" })
+                                <div class="box-description" style="text-align: left; padding-top:7px" ">
+                                    <a class="groupHomeCount" href="@Url.Action("Index", "Order", new { OrderDateStart=Model.OrderStatus.QuarterFirstDate })"><span>@Model.OrderStatus.TotQtr</span> Order(s)</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 p-0">
+                            <div class=" box-dashboard bg-tim">
+                                @Html.Label("Total Orders YTD", htmlAttributes: new { @class = "control-label title_box" })
+                                <div class="box-description" style="text-align: left; padding-top:7px" ">
+                                    <a class="groupHomeCount" href="@Url.Action("Index", "Order", new { OrderDateStart=Model.OrderStatus.YearFirstDate })"><span>@Model.OrderStatus.TotYtd</span> Order(s)</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 p-0">
+                            <div class=" box-dashboard bg-pink">
+                                @Html.Label("Orders Pending Shipment", htmlAttributes: new { @class = "control-label title_box" })
+                                <div class="box-description" style="text-align: left; padding-top:7px" ">
+                                    <a class="groupHomeCount" href="@Url.Action("OrdersAll", "Order", new { Status = "PS" } )"><span>@Model.OrderStatus.TotPS</span> Order(s)</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                            @*<p>Orders This Month : <a href="@Url.Action("Index", "Order", new { OrderDateStart=Model.OrderStatus.MonthFirstDate })">@Model.OrderStatus.TotMonth Order(s)</a></p>
+                    <p>Orders This Quarter : <a href="@Url.Action("Index", "Order", new { OrderDateStart=Model.OrderStatus.QuarterFirstDate })">@Model.OrderStatus.TotQtr Order(s)</a></p>
+                    <p>Total Orders YTD : <a href="@Url.Action("Index", "Order", new { OrderDateStart=Model.OrderStatus.YearFirstDate })">@Model.OrderStatus.TotYtd Order(s)</a></p>
+                    <p>Orders Pending Shipment : <a href="@Url.Action("OrdersAll", "Order", new { Status = "PS" } )">@Model.OrderStatus.TotPS Order(s)</a></p>*@
+                        </div>
+</li>
+        </ul>
+    </section>
+</div>
+
+
+@*<div class="row">
+
+        <div class="col-md-12">
+            <div class="text-center tx-bottom-dash">
+                <h2 class="h1" style="color: black; padding-bottom: 20px">Featured Items</h2>
+            </div>
+            @(Html.Kendo().ListView<StoreFront2.ViewModels.ProductViewModel>()
+                                                                                            .Name("listViewSpecials")
+                                                                                            .TagName("div")
+                                                                                            .ClientTemplateId("kendo-card-template-specials")
+                                                                                            .DataSource(dataSource =>
+                                                                                            {
+                                                                                                dataSource.Custom()
+                                                                                                .Transport(x => x.Read(read => read.Action("Products_Specials", "Order").Type(HttpVerbs.Get)))
+                                                                                                .ServerAggregates(false)
+                                                                                                .ServerFiltering(false)
+                                                                                                .ServerGrouping(false)
+                                                                                                .ServerPaging(false)
+                                                                                                .ServerSorting(false);
+                                                                                            })
+                                                                                            .HtmlAttributes(new { @class = "border-0 k-card-grid mt-5" })
+            )
+
+        </div>
+    </div>*@
+
+<script type="text/x-kendo-tmpl" id="kendo-card-template-order">
+    <div class="k-card">
+        <div class="k-card-body">
+            <h5 class="k-card-title">Order No. #:SFOrderNumber#</h5>
+            <h6 class="k-card-subtitle small text-muted font-italic">PO No. #:data.PONumber#</h6>
+        </div>
+        <div class="k-card-actions d-flex justify-content-between">
+            <span class="text-primary">Status #: data.OrderStatus #</span>
+            <a href="@Url.Content("~/")Order/#:Id#">View Details</a>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-kendo-tmpl" id="kendo-card-template-specials">
+    <div class="k-card">
+        <img alt="#:PickPackCode#" src="@Url.Content("~/")#:ImageRelativePath#?width=320&height=320" onerror="src='@Url.Content("~/Content/"+_storeFrontName+"/Images/default.png")'" class="k-card-image" />
+        <div class="k-card-body">
+            <h5 class="k-card-title">#:PickPackCode#</h5>
+            <h6 class="k-card-subtitle small text-muted font-italic">
+                #:data.ShortDesc#
+            </h6>
+        </div>
+        <div class="k-card-actions d-flex justify-content-between">
+            @{ if (_setting.DisplayProductPrices == 1)
+                {<span class="text-primary">Price $#: data.SellPrice #</span> }
+            }
+            <a href="@Url.Content("~/")Order/ProductDetail/#:Id#">View Details</a>
+        </div>
+    </div>
+</script>

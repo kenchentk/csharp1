@@ -1,0 +1,532 @@
+﻿@using StoreFront2.Data;
+
+@{
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+    }
+    ViewBag.Title = "Vendors";
+}
+
+<style>
+    .k-checkbox {
+        height: 32px;
+        width: 32px;
+        background-color: white;
+    }
+
+    .k-textbox {
+        width: 100%;
+    }
+
+    .k-grid {
+        border-width: 0 0 0 0;
+    }
+
+    .k-grid-header {
+        background-color: green;
+        color: white;
+        border-color: white;
+    }
+
+    .k-grid k-grid-content {
+        border-color: white;
+    }
+
+    .k-edit-form-container {
+        width: 97%;
+    }
+</style>
+
+<div class="container">
+    <div class="col-md-12">
+        <div class="panel-body">
+            <p style="font-size:x-large">Vendors</p>
+            <div class="k-card k-card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <h5 style="font-family:sans-serif">I WOULD LIKE TO</h5>
+                    </div>
+                    <div class="col-md-10">
+                        @(Html.Kendo().DropDownList()
+                                                .Name("myAction")
+                                                .DataTextField("Text")
+                                                .DataValueField("Value")
+                                                .BindTo(new List<SelectListItem>()
+                                                    {
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Choose",
+                                                            Value = ""
+                                                        },
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Add Vendor",
+                                                            Value = "actionAddVendor"
+                                                        },
+                                                        new SelectListItem()
+                                                        {
+                                                            Text = "Export Filtered",
+                                                            Value = "actionExportToExcel"
+                                                        },
+                                                    })
+                                                    .Value("")
+                                                        )
+                        <button class="btn btn-success btn-sm" onclick="onMyAction(event)">Execute Action</button>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card k-card-body">
+
+                <h5 class="k-card-title">Search Vendor By :</h5>
+                <div class="row" style="padding-bottom: 5px">
+                    <div class="col-sm-3">
+                        Alias<br />
+                        <input class="k-textbox" id="searchByAlias" style="width:100%;" />
+                    </div>
+                    <div class="col-sm-3">
+                        Name<br />
+                        <input class="k-textbox" id="searchByName" style="width:100%;" />
+                    </div>
+                    <div class="col-sm-3">
+                        Username<br />
+                        <input class="k-textbox" id="searchByEmail" style="width:100%;" />
+                    </div>
+                </div>
+                <br />
+                <div class="row" style="padding-bottom: 5px">
+                    <div class="col-sm-3">
+                        Address<br />
+                        <input class="k-textbox" id="searchByAddress" style="width:100%;" />
+                    </div>
+                    <div class="col-sm-3">
+                        City<br />
+                        <input class="k-textbox" id="searchByCity" style="width:100%;" />
+                    </div>
+                    <div class="col-sm-3">
+                        State<br />
+                        <input class="k-textbox" id="searchByState" style="width:100%;" />
+                    </div>
+                    <div class="col-sm-3">
+                        Zip<br />
+                        <input class="k-textbox" id="searchByZip" style="width:100%;" />
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col-md-3">
+                        <input id="btnSearch" type="button" class="btn btn-success btn-sm" onclick="onSearch(event)" style="padding:5px" value="Search" />
+                        <input id="btnReset" type="button" class="btn btn-sm" onclick="onReset(event)" style="padding:5px" value="Reset">
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card k-card-body">
+
+                @(Html.Kendo().Grid<StoreFront2.ViewModels.VendorViewModel>()
+                                                  .Name("grid")
+                                                  .Columns(columns =>
+                                                  {
+                                                      columns.Bound(c => c.Id).Hidden();
+                                                      columns.Bound(c => c.Alias).Width(50);
+                                                      columns.Bound(c => c.Company).Width(50).Title("Vendor Name");
+                                                      columns.Bound(c => c.Address1).Title("Address 1").Width(60);
+                                                      columns.Bound(c => c.Address2).Title("Address 2").Width(40);
+                                                      columns.Bound(c => c.City).Width(80);
+                                                      columns.Bound(c => c.State).Title("State").Width(25);
+                                                      columns.Bound(c => c.Zip).Width(50);
+                                                      columns.Bound(c => c.Country).ClientTemplate("#=Country#").Width(50);
+                                                      columns.Bound(c => c.Phone).Width(70);
+                                                      columns.Bound(c => c.Email).Title("Email").Width(100);
+                                                      columns.Bound(c => c.Status).Title("Status").EditorTemplateName("CheckBoxTemplate").ClientTemplate("<input type='checkbox' #=(Status??false) ? checked='checked' : '' # disabled='true' />").Width(40);
+                                                      columns.Command(c =>
+                                                      {
+                                                          c.Edit().Text(" ").UpdateText(" ").CancelText(" "); //.Template("<button type=\"button\" class=\"k-button k-button-icon edit\"><span class=\"k-icon k-i-edit\"></span></button>");
+                                                          c.Destroy().Text(" "); //.Template("<button type=\"button\" class=\"k-button k-button-icon k-grid-delete\"><span class=\"k-icon k-i-delete\"></span></button>");
+                                                      }).Width(70);
+                                                  })
+                                                  .Selectable(selectable =>
+                                                  {
+                                                      selectable.Mode(GridSelectionMode.Single);
+                                                      selectable.Type(GridSelectionType.Row);
+                                                  })
+                                                  .Pageable()
+                                                  .Scrollable(scrolling => scrolling.Enabled(true))
+                                                  .DataSource(dataSource => dataSource
+                                                        .Ajax()
+                                                        .Model(c =>
+                                                        {
+                                                            c.Id(u => u.Id);
+                                                        })
+                                                        .Read(read => read.Action("Vendor_Read", "Inventory"))
+                                                        .Create(create => create.Action("Vendor_CreateAsync", "Inventory"))
+                                                        .Update(update => update.Action("Vendor_Update", "Inventory"))
+                                                        .Destroy(destroy => destroy.Action("Vendor_Destroy", "Inventory"))
+                                                        .PageSize(50)
+                                                        .Events(events =>
+                                                        {
+                                                            events.Error("error_handler");
+                                                        })
+                                                  )
+                                                  .Editable(editable => editable
+                                                        .Mode(GridEditMode.PopUp)
+                                                        .Window(w => w.Title("Vendor").Width(1000))
+                                                        .TemplateName("VendorEditor")
+                                                  )
+                                                  .Events(events =>
+                                                  {
+                                                      events.Edit("onVendorEdit");
+                                                      events.Save("onVendorSave");
+                                                      events.DataBound("onVendorDataBound");
+                                                      events.ExcelExport("customExcelExport");
+                                                  })
+                                                )
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function error_handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function () {
+                        message += this + "\n";
+                    });
+                }
+            });
+            alert(message);
+            var grid = $("#grid").data("kendoGrid");
+            grid.one("dataBinding", function (e) {
+                e.preventDefault();
+            })
+        }
+    }
+
+    function onVendorEdit(e) {
+        var grid = e.sender;
+        var currentDataItem = grid.dataItem(this.select());
+
+        if (e.model.isNew()) {
+            //set field
+            e.model.Country = "US";
+            var countryDropDownList = $("#Country").data("kendoDropDownList");
+            countryDropDownList.value(e.model.Country);
+        }
+
+        // Set different template for Create/Edit
+        if (e.model.isNew()) {
+            $(".forEdit").remove();
+        } else {
+            $(".forCreate").remove();
+            //$(e.container).parent().css({
+            //    width: $(document).width * .9,
+            //})
+        }
+        //$('.k-grid-update').text("Save Address");
+    }
+
+    function onVendorSave(e) {
+        //var grid = $("#grid").data("kendoGrid");
+        e.sender.one("dataBound", function () {
+            e.sender.dataSource.read();
+            //var grid = $("#grid").data('kendoGrid');
+            //grid.dataSource.read();
+        })
+    }
+
+    function onVendorDataBound(e) {
+        var grid = this;
+        grid.element.off('dblclick');
+        grid.element.on('dblclick', 'tbody tr[data-uid]', function (e) {
+            grid.editRow($("#grid tr.k-state-selected"));
+        });
+        //e.sender.editRow($(e.target).closest('tr'));
+    }
+
+    function customExcelExport(e) {
+        var sheet = e.workbook.sheets[0];
+        for (var rowIndex = 1; rowIndex < sheet.rows.length; rowIndex++) {
+            var row = sheet.rows[rowIndex];
+        }
+
+        if (e.sender._exporting === undefined) {
+            e.sender._exporting = true;
+        }
+        if (e.sender._exporting) {
+            e.preventDefault();
+
+            setTimeout(function () {
+                e.sender._exporting = false;
+                e.sender.saveAsExcel();
+            });
+        } else {
+            e.sender._exporting = true;
+        }
+    }
+
+    function onMyAction(e) {
+        var myAction = $("#myAction").val();
+
+        if (myAction == "actionExportToExcel") {
+            var grid = $('#grid').data('kendoGrid');
+            grid.setOptions({
+                excel: {
+                    allPages: true
+                }
+            });
+            grid.saveAsExcel();
+            e.preventDefault();
+        }
+
+        if (myAction == "actionAddVendor") {
+            e.preventDefault();
+            var grid = $("#grid").data('kendoGrid');
+            grid.addRow();
+        }
+
+        if (myAction.length == 0) {
+            e.preventDefault();
+        }
+
+    }
+
+    function onReset(e) {
+        $('#searchByAlias').val('');
+        $('#searchByName').val('');
+        $('#searchByAddress').val('');
+        $('#searchByCity').val('');
+        $('#searchByState').val('');
+        $('#searchByZip').val('');
+        $('#searchByEmail').val('');
+
+        onSearch(e);
+    }
+
+    function onSearch(e) {
+        var grid = $('#grid').data('kendoGrid');
+
+        // blank filter and push additional parameters
+        var filter = { logic: 'and', filters: [] };
+        var filterAlias = { logic: 'or', filters: [] };
+        var filterName = { logic: 'or', filters: [] };
+        var filterAddress = { logic: 'or', filters: [] };
+        var filterCity = { logic: 'or', filters: [] };
+        var filterState = { logic: 'or', filters: [] };
+        var filterZip = { logic: 'or', filters: [] };
+        var filterEmail = { logic: 'or', filters: [] };
+
+        var valueByAlias = $('#searchByAlias').val();
+        var valueByName = $('#searchByName').val();
+        var valueByAddress = $('#searchByAddress').val();
+        var valueByCity = $('#searchByCity').val();
+        var valueByState = $('#searchByState').val();
+        var valueByZip = $('#searchByZip').val();
+        var valueByEmail = $('#searchByEmail').val();
+
+        if (valueByAlias.length > 0) {
+            filterAlias.filters.push({
+                field: 'AddressAlias',
+                operator: 'contains',
+                value: valueByAlias
+            })
+            filter.filters.push(filterAlias);
+        }
+
+        if (valueByName.length > 0) {
+            filterName.filters.push({
+                field: 'Company',
+                operator: 'contains',
+                value: valueByName
+            })
+            filterName.filters.push({
+                field: 'FirstName',
+                operator: 'contains',
+                value: valueByName
+            })
+            filterName.filters.push({
+                field: 'LastName',
+                operator: 'contains',
+                value: valueByName
+            })
+            filter.filters.push(filterName);
+        }
+
+        if (valueByAddress.length > 0) {
+            filterAddress.filters.push({
+                field: "Address1",
+                operator: "contains",
+                value: valueByAddress
+            });
+            filterAddress.filters.push({
+                field: "Address2",
+                operator: "contains",
+                value: valueByAddress
+            });
+            filterAddress.filters.push({
+                field: "Country",
+                operator: "eq",
+                value: valueByAddress
+            });
+            filter.filters.push(filterAddress);
+        }
+
+        if (valueByCity.length > 0) {
+            filterCity.filters.push({
+                field: "City",
+                operator: "contains",
+                value: valueByCity
+            });
+            filter.filters.push(filterCity);
+        }
+
+        if (valueByState.length > 0) {
+            filterState.filters.push({
+                field: "State",
+                operator: "contains",
+                value: valueByState
+            });
+            filter.filters.push(filterState);
+        }
+
+        if (valueByZip.length > 0) {
+            filterZip.filters.push({
+                field: "Zip",
+                operator: "contains",
+                value: valueByZip
+            });
+            filter.filters.push(filterZip);
+        }
+
+        if (valueByEmail.length > 0) {
+            filterEmail.filters.push({
+                field: 'Email',
+                operator: 'contains',
+                value: valueByEmail
+            })
+            filter.filters.push(filterEmail);
+        }
+
+
+        grid.dataSource.filter(filter);
+
+    }
+
+    // #Region VendorEditor Functions
+    function onBtnEditSave(e){
+        var iconEdit = $("#btnEditSaveIcon");
+        var iconCancel = $("#btnCancelIcon");
+        var btnEdit = $("#btnEditSave");
+        var btnCancel = $("#btnCancel");
+        var newUserName = $("#Username").val();
+
+        if (iconEdit.attr('class') == "glyphicon glyphicon-pencil") {
+            iconEdit.removeClass("glyphicon-pencil");
+            iconEdit.addClass("glyphicon-ok");
+
+            $("#Username").prop('readonly', false);
+            btnCancel.css('display', 'inline-block');
+
+        }
+        else {
+            // Save username change
+            var aspNetUserId = $("#AspnetUserId");
+            $.ajax({
+                type: "POST",
+                datatype: "json",
+                url: '@Url.Action("ChangeUserName", "Admin")',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ aspNetUserId : aspNetUserId, userName : newUserName }),
+                success: function (data) {
+                    var iconEdit = $("#btnEditSaveIcon");
+                    var btnCancel = $("#btnCancel");
+
+                    iconEdit.removeClass("glyphicon-ok");
+                    iconEdit.addClass("glyphicon-pencil");
+
+                    $("#Username").prop('readonly', true);
+                    btnCancel.css('display', 'none');
+                }
+            })
+        }
+    }
+
+    function onBtnCancel(e) {
+        var prevUserName = "";
+        var iconEdit = $("#btnEditSaveIcon");
+        var btnCancel = $("#btnCancel");
+
+        iconEdit.removeClass("glyphicon-ok");
+        iconEdit.addClass("glyphicon-pencil");
+
+        $("#Username").val(prevUserName);
+        $("#Username").prop('readonly', true);
+        btnCancel.css('display', 'none');
+    }
+
+
+    function onSendChangePasswordLinkClick() {
+        var userEmail = $("#Email").val();
+        var errorElement = document.getElementById("SendLinkError");
+        errorElement.innerHTML = "";
+
+        $.post("/Admin/User_ResetPassword", { userEmail: userEmail }, function (data) {
+            errorElement.innerHTML = data.message;
+        });
+    }
+
+    function clearError() {
+        $("#PasswordError").hide();
+        $("#ConfirmPasswordError").hide();
+    }
+
+    function onChangePasswordClick() {
+        var newpass = $("#Password");
+        var confirmpass = $("#ConfirmPassword");
+        var newpasserror = $("#PasswordError");
+        var confirmpasserror = $("#ConfirmPasswordError");
+        var changepassworderror = $("#ChangePasswordError");
+        var errorElement = document.getElementById("ChangePasswordError");
+        newpasserror.hide();
+        confirmpasserror.hide();
+        errorElement.innerHTML = "";
+        if (newpass.val() != confirmpass.val()) {
+            confirmpasserror.val('Password Confirmation is not the same');
+            confirmpasserror.toggle();
+        }
+        else {
+            var aspNetUserId = $("#AspnetUserId");
+            $.post("/Admin/User_ChangePassword", { userId: aspNetUserId, password: newpass.val() }, function (data) {
+                var errors = "";
+                if (data.message == 'Error') {
+                    var curErrorText = "";
+                    for (var i = 0; i < data.errorlist.length; i++) {
+                        curErrorText = errorElement.innerHTML;
+                        errorElement.innerHTML = curErrorText + data.errorlist[i] + "<br />";
+                    }
+                } else {
+                    errorElement.innerHTML = data.message;
+                }
+            });
+        }
+    }
+
+    // #End Region VendorEditor Functions
+
+    // #Region Document Ready
+    $(function () {
+        $("#Username").each(function (i, e) {
+            e.prop("disabled", true);
+        })
+    })
+    // #End Region Document Ready
+
+</script>

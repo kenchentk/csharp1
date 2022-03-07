@@ -1,0 +1,163 @@
+﻿@using StoreFront2.Data
+@{
+    var access = new UserPermission();
+    var usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+    }
+}
+
+<div class="container">
+    <h2>Import User Addresses</h2>
+
+    <h3>1. Download Excel Template</h3>
+    <form method="get" action="~/Content/Defaults/Files/UserAddressImportTemplate.xlsx">
+        <button type="submit">Download</button>
+    </form>
+
+    <h3>2. Upload Excel File</h3>
+    @*<span>Select excel file :</span>*@
+    <input id="txtFileName" type="text" value="" style="width:100%; display:none" />
+    @(Html.Kendo().Upload()
+            .Name("files")
+            .HtmlAttributes(new { aria_label = "files" })
+                .Async(a => a
+                            .Save("Async_Save", "Admin"))
+                .Events(e => e.Success("onUploadSuccess")
+            ))
+
+    <h3>3. Review Data</h3>
+    @(Html.Kendo().Grid<StoreFront2.ViewModels.UserAddressViewModel>()
+    .Name("grid")
+    .Columns(columns =>
+    {
+        columns.Bound(c => c.Id).Hidden();
+        columns.Bound(c => c.UserName).Title("Username");
+        columns.Bound(c => c.AddressAlias).Title("Alias");
+        columns.Bound(c => c.Company);
+        columns.Bound(c => c.FirstName);
+        columns.Bound(c => c.LastName);
+        columns.Bound(c => c.Address1).Title("Address 1");
+        columns.Bound(c => c.Address2).Title("Address 2");
+        columns.Bound(c => c.City);
+        columns.Bound(c => c.State);
+        columns.Bound(c => c.Zip);
+        columns.Bound(c => c.Country);
+        columns.Bound(c => c.Phone);
+        columns.Bound(c => c.Email);
+        columns.Bound(c => c.DefaultShipTo).Title("Default");
+    })
+    .Pageable()
+    .Scrollable(scrolling => scrolling.Enabled(false))
+    .DataSource(dataSource => dataSource
+        .Ajax()
+        .Model(c => c.Id(u => u.Id))
+        .Read(read => read.Action("Read_NewUserAddresses_Grid", "Manage").Data("fileNameData"))
+        .PageSize(1000)
+        )
+    )
+    <h3>4. Import User Addresses from Data</h3>
+
+    <input id="btnCreateUserAddresses" type="button" class="btn btn-success" value="Create User Addresses" />
+
+    <h3>5. Final Result</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>User Address created</td>
+                        <td><input id="txtCounterSuccess" type="text" value="" /></td>
+                    </tr>
+                    <tr>
+                        <td>Errors</td>
+                        <td><input id="txtCounterError" class="text-danger" type="text" value="" /></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="divError" class="row">
+    </div>
+    <div class="row">
+        <span id="spanFinalResult"></span>
+    </div>
+</div>
+
+<script>
+
+    function fileNameData() {
+        return { fileName: $("#txtFileName").val() }
+    }
+
+    function onUploadSuccess(e) {
+        $("#txtFileName").val(e.response.message);
+        $("#grid").data("kendoGrid").dataSource.read();
+    }
+
+    $("#btnCreateUserAddresses").click(function () {
+        var counterAdd = 0;
+        var counterSuccess = 0;
+        var counterError = 0;
+
+        var grid = $("#grid").data("kendoGrid");
+        var view = grid.dataSource.view();
+
+        for (counterAdd = 0; counterAdd < view.length; counterAdd++) {
+            var currentUser = view[counterAdd];
+            var userAddresViewModel = {
+                username: currentUser.UserName,
+                addressalias: currentUser.AddressAlias,
+                company: currentUser.Company,
+                firstname: currentUser.FirstName,
+                lastname: currentUser.LastName,
+                address1: currentUser.Address1,
+                address2: currentUser.Address2,
+                city: currentUser.City,
+                state: currentUser.State,
+                zip: currentUser.Zip,
+                country: currentUser.Country,
+                phone: currentUser.Phone,
+                email: currentUser.Email,
+                defaultshipto: currentUser.DefaultShipTo,
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/Manage/UserAddresses_Add",
+                data: userAddresViewModel,
+                dataType: "json",
+                success: function (data) {
+                    if (data.result == 'error') {
+                        counterError++;
+                        $("#txtCounterError").val(counterError);
+
+                        //$("#divError").update(curErrorText + "<br />" + "Error : " + currentUser.UserName + " " + data.message);
+                        //document.GetElementById("divError").innerHTML = curErrorText + "<p>" + "Error : " + currentUser.UserName + " " + data.message + "</p>";
+                        var errorElement = document.getElementById("divError");
+                        var curErrorText = errorElement.innerHTML;
+                        errorElement.innerHTML = curErrorText + "<br />" + "Error : "  + data.message;
+                    }
+                    if (data.result == 'success') {
+                        counterSuccess++;
+                        $("#txtCounterSuccess").val(counterSuccess);
+                    }
+                    $("#spanFinalResult").text("Successfully created " + counterSuccess + " user addresses. Error : " + counterError);
+                },
+            });
+        }
+
+
+
+
+    })
+
+
+</script>

@@ -1,0 +1,630 @@
+﻿@model StoreFront2.ViewModels.FilterViewModel
+@using StoreFront2.Data
+
+@{
+    var _access = new UserPermission();
+    var _usersetting = new UserSetting();
+    var _setting = new SystemSetting();
+    var _storeFrontName = "Defaults";
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        _usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+    }
+}
+
+<style>
+    .k-textbox {
+        width: 100%;
+    }
+
+    .k-grid {
+        border-width: 0 0 0 0;
+    }
+
+    .k-grid-header {
+        background-color: green;
+        color: white;
+        border-color: white;
+    }
+
+    .k-grid k-grid-content {
+        border-color: white;
+    }
+
+    .k-grid .k-hierarchy-col {
+        width: 15px;
+    }
+
+    .ordercancelled {
+        background: linear-gradient(rgb(215, 189, 233), rgb(195, 169, 233));
+    }
+
+    .ordershipped {
+        background: linear-gradient(rgb(189, 196, 233), rgb(169, 176, 233));
+        /*background-color: rgb(189, 196, 233);*/
+    }
+
+    .orderpartiallyshipped {
+        background: linear-gradient(rgb(189, 196, 233), rgb(169, 176, 193));
+    }
+
+    .orderreceived {
+        background: linear-gradient(rgb(189, 233, 193), rgb(169, 213, 193));
+        /*background-color: rgb(189, 233, 193);*/
+    }
+
+    .orderpendingshipment {
+        background: linear-gradient(rgb(189, 233, 231), rgb(169, 213, 231));
+        /*background-color: rgb(189, 233, 231);*/
+    }
+</style>
+
+<div class="container">
+    <div class="col-md-2">
+    </div>
+    <div class="col-md-12">
+
+        <div class="panel-body body-while">
+            <p style="font-size:large">My Orders</p>
+            <div class="k-card k-card-body">
+                <h5 class="k-card-title">Search Order By :</h5>
+                @*<h6 class="k-card-subtitle small text-muted font-italic">
+                        #:data.ShortDesc#
+                    </h6>*@
+                <div class="row">
+                    <div class="col-md-6">
+                        Order Number <br />
+                        <input class="k-textbox" id="searchByOrderNumber" type="number" />
+                    </div>
+                    <div class="col-md-6">
+                        Order Status <br />
+                        @(Html.Kendo().MultiSelect()
+                            .Name("orderstatus")
+                            .Placeholder("Select status ...")
+                            .DataTextField("Desc")
+                            .DataValueField("Id")
+                            .DataSource(source =>
+                            {
+                                source.Read(read =>
+                                {
+                                    read.Action("Read_OrderStatuses", "Order");
+                                });
+                            }
+                            )
+                            .Events(ev => ev.Change("onOrderStatusChange"))
+                            .ItemTemplateId("dropdownTemplate")
+                        )
+
+                    </div>
+                </div>
+                <div class="row" style="padding-bottom:10px">
+                    <div class="col-md-12">
+                        Order Date Range <br />
+                        @(Html.Kendo().DateRangePicker()
+              .Name("orderDateRange")
+              .HtmlAttributes(new { style = "width: 100%" })
+                        )
+                    </div>
+                </div>
+                <div class="row" style="padding-bottom:10px">
+                    @*<div class="k-text-right col-md-2">*@
+                    <div class="col-md-6">
+                        Product Code
+                        <input class="k-textbox" id="searchByProductCode" />
+                    </div>
+                    <div class="col-md-6">
+                        Short Description<br />
+                        <input class="k-textbox" id="searchByShortDesc" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <button id="btnSearch" class="btn btn-success btn-sm" onclick="onSearch(event)">Search</button>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="k-card k-card-body">
+
+                @(Html.Kendo().Grid<StoreFront2.ViewModels.OrderViewModel>
+    ()
+    .Name("grid")
+    .Columns(columns =>
+    {
+        columns.Bound(c => c.Id).Title("Order Number").Width(75);
+        columns.Bound(c => c.DateCreated).Format("{0:MM/dd/yyyy}").Width(75);
+        columns.Bound(c => c.DateShipped).Format("{0:MM/dd/yyyy}").Title("Ship Date").Hidden();
+        columns.Bound(c => c.TrackingNumbers).Hidden();
+        columns.Bound(c => c.ProductIds).Hidden();
+        columns.Bound(c => c.ShipMethodCode).Hidden();
+        columns.Bound(c => c.OrderStatus).Hidden();
+        columns.Bound(c => c.OrderStatusDesc).Width(75);
+        columns.Bound(c => c.UserName).Hidden();
+        columns.Bound(c => c.TotalPrice).Hidden();
+        if (_setting.DisplayOrderValues == 1 && (_setting.DisplayOrderValuesFor == "Everyone" || (_setting.DisplayOrderValuesFor == "Admins Only" && _usersetting.AllowAdminAccess == 1)))
+            columns.Bound(c => c.TotalPrice).Format("{0:c}").ClientFooterTemplate("Sum: $#=sum.toFixed(2)#").Width(75);
+        columns.Command(c =>
+        {
+            //c.Custom("Ship").Click("onShipClick").HtmlAttributes(new { @style = "font-size:12px; line-height:1" });
+            c.Edit().Text("Add Shipment").UpdateText(" ").CancelText(" ");
+        }).Width(80);
+    })
+    .Scrollable(s =>
+    {
+        s.Height("auto");
+        s.Enabled(true);
+    })
+    .ClientDetailTemplateId("detailTemplate")
+    .Selectable(selectable =>
+    {
+        selectable.Mode(GridSelectionMode.Single);
+        selectable.Type(GridSelectionType.Row);
+    })
+    .Pageable(p => p.ButtonCount(2))
+    .DataSource(dataSource => dataSource
+    .Ajax()
+    .Model(c =>
+    {
+        c.Id(u => u.Id);
+    })
+    .Sort(sort => sort.Add("DateCreated").Descending())
+    .Read(read => read.Action("Orders_Read_Vendor", "Order"))
+    .Update(update => update.Action("VendorOrder_Update", "Order"))
+    .Filter(filter =>
+    {
+        if (Model.OrderDateStart != null) filter.Add(f => f.DateCreated).IsGreaterThanOrEqualTo(Model.OrderDateStart);
+        if (Model.OrderDateEnd != null) filter.Add(f => f.DateCreated).IsLessThanOrEqualTo(Model.OrderDateEnd);
+
+        // Also set initial order status
+        if (Model.SelectedStatuses != null && Model.SelectedStatuses.Count() > 0 && Model.SelectedStatuses.Count() <= 7)
+        {
+            List<StoreFront2.Models.OrderStatus>
+                osList = Model.SelectedStatuses;
+            // not sure how to tag multiple or with foreach using fluent. do it manually since we have finite number of statuses.
+            if (Model.SelectedStatuses.Count() == 1) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code);
+            if (Model.SelectedStatuses.Count() == 2) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code);
+            if (Model.SelectedStatuses.Count() == 3) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code);
+            if (Model.SelectedStatuses.Count() == 4) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code);
+            if (Model.SelectedStatuses.Count() == 5) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code).Or().IsEqualTo(osList[4].Code);
+            if (Model.SelectedStatuses.Count() == 6) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code).Or().IsEqualTo(osList[4].Code).Or().IsEqualTo(osList[5].Code);
+            if (Model.SelectedStatuses.Count() == 7) filter.Add(f => f.OrderStatus).IsEqualTo(osList[0].Code).Or().IsEqualTo(osList[1].Code).Or().IsEqualTo(osList[2].Code).Or().IsEqualTo(osList[3].Code).Or().IsEqualTo(osList[4].Code).Or().IsEqualTo(osList[5].Code).Or().IsEqualTo(osList[6].Code);
+        }
+        else
+        {
+            filter.Add(f => f.OrderStatus).IsEqualTo("OH").Or().IsEqualTo("PS").Or().IsEqualTo("RP").Or().IsEqualTo("PH").Or().IsEqualTo("SH");
+        }
+        // Filter the order number
+        if (Model.OrderNumber != null) filter.Add(f => f.SFOrderNumber.ToString()).Equals(Model.OrderNumber);
+    })
+    .Aggregates(ag =>
+    {
+        ag.Add(c => c.TotalPrice).Sum();
+    })
+    )
+    .Editable(editable => editable
+    .Mode(GridEditMode.PopUp)
+    .Window(w => w.Title("Shipment Trackings"))
+    .TemplateName("OrderTrackingEditor")
+    )
+    .Events(events =>
+    {
+        events.Change("onChange");
+        events.DataBound("initTemplate");
+        events.Save("ongridSave");
+        events.Cancel("ongridCancel");
+    })
+    )
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script id="detailTemplate" type="text/kendo-tmpl">
+    #if(OrderStatus != "SH") {#
+    @(Html.Kendo().Grid<StoreFront2.ViewModels.OrderDetailViewModel>()
+                                        .Name("griddetail_#=Id#") // template expression, to be evaluated in the master context
+                                        .Columns(columns =>
+                                        {
+                                            columns.Bound(o => o.Qty).Title("Quantity").Width(50);
+                                            columns.Bound(o => o.ProductCode).Title("Product").Width(100);
+                                            columns.Bound(o => o.ShortDesc).Title("Description").Width(150);
+                                            if (_setting.DisplayOrderValues == 1 && (_setting.DisplayOrderValuesFor == "Everyone" || (_setting.DisplayOrderValuesFor == "Admins Only" && _usersetting.AllowAdminAccess == 1)))
+                                                columns.Bound(o => o.Total).Format("{0:c}").Width(75).ClientFooterTemplate("Sub Total: \\#= kendo.toString(sum,'c')\\#");
+                                        })
+                                        .DataSource(dataSource => dataSource
+                                            .Ajax()
+                                            .PageSize(5)
+                                            .Read(read => read.Action("OrderDetailsVendor_Read", "Order", new { Id = "#=Id#" }))
+                                            .Aggregates(ag => { ag.Add(c => c.Total).Sum(); })
+                                        )
+                                        .Pageable()
+                                        .Sortable()
+                                        .ToClientTemplate())
+    #}
+    else if(OrderStatus == "PH") {#
+        @(Html.Kendo().Grid<StoreFront2.ViewModels.OrderDetailViewModel>()
+                                        .Name("griddetail_#=Id#") // template expression, to be evaluated in the master context
+                                        .Columns(columns =>
+                                        {
+                                            columns.Bound(o => o.Qty).Title("Quantity").Width(50);
+                                            columns.Bound(o => o.ProductCode).Title("Product").Width(100);
+                                            columns.Bound(o => o.ShortDesc).Title("Description").Width(150);
+                                            if (_setting.DisplayOrderValues == 1 && (_setting.DisplayOrderValuesFor == "Everyone" || (_setting.DisplayOrderValuesFor == "Admins Only" && _usersetting.AllowAdminAccess == 1)))
+                                                columns.Bound(o => o.Total).Format("{0:c}").Width(75).ClientFooterTemplate("Sub Total: \\#= kendo.toString(sum,'c')\\#");
+                                        })
+                                        .DataSource(dataSource => dataSource
+                                            .Ajax()
+                                            .PageSize(5)
+                                            .Read(read => read.Action("OrderDetailsVendor_Read", "Order", new { Id = "#=Id#" }))
+                                            .Aggregates(ag => { ag.Add(c => c.Total).Sum(); })
+                                        )
+                                        .Pageable()
+                                        .Sortable()
+                                        .ToClientTemplate())
+    #}
+    else {#
+    @(Html.Kendo().Grid<StoreFront2.ViewModels.ShipmentViewModel>()
+                                        .Name("griddetailshipped_#=Id#") // template expression, to be evaluated in the master context
+                                        .Columns(columns =>
+                                        {
+                                            columns.Bound(o => o.OrderId).Title("Order Id").Hidden();
+                                            columns.Bound(o => o.TrackId).Hidden();
+                                            columns.Bound(o => o.TrackingNumber).Title("Tracking").Encoded(false);
+                                            columns.Bound(o => o.Carrier).Title("Carrier");
+                                            columns.Bound(o => o.DateShipped).Title("Date").Format("{0:d}");
+                                            columns.Bound(o => o.Status).Title("Status").Hidden();
+                                        })
+                                        .ClientDetailTemplateId("detailItemTemplate")
+                                        .DataSource(dataSource => dataSource
+                                            .Ajax()
+                                            .PageSize(5)
+                                            .Read(read => read.Action("OrderDetailShipment_Read", "Order", new { Id = "#=Id#" }))
+                                        )
+                                        .Pageable()
+                                        .Sortable()
+                                        .ToClientTemplate())
+    #}#
+</script>
+
+<script id="detailItemTemplate" type="text/kendo-tmpl">
+    @(Html.Kendo().Grid<StoreFront2.ViewModels.TrackingDetailViewModel>()
+                                        .Name("griddetail_#=OrderId#_#=TrackId#") // template expression, to be evaluated in the master context
+                                        .Columns(columns =>
+                                        {
+                                            columns.Bound(o => o.Qty).Title("QTY Shipped").Width(50);
+                                            columns.Bound(o => o.ProductCode).Title("Product").Width(80);
+                                        })
+                                        .DataSource(dataSource => dataSource
+                                            .Ajax()
+                                            .Read(read => read.Action("TrackingDetails_Read", "Order", new { OrderTrackingId = "#=TrackId#" }))
+                                        )
+                                        .ToClientTemplate())
+</script>
+
+<script>
+
+    function renderTrackingCol(model) {
+        var text = model.TrackingNumbers;
+        if (text != null)
+            text = text.replace(new RegExp("\n", 'g'), "<br>");
+        else text = "";
+        return text
+    }
+
+    function addBr(text) {
+        var regexp = new RegExp('\n', 'g');
+        var retval = ""
+        if (text != null)
+            retval = text.replace(regexp, '<br/>');
+        return retval;
+    }
+
+    function setSelectedValue() {
+        $.ajax({
+            datatype: "json",
+            url: '@Url.Action("UserOrderStatuses_SetSelected")',
+            success: function (data) {
+                $("#orderstatus").data("kendoMultiSelect").value(data);
+            }
+        })
+
+        var items = this.ul.find("li");
+        setTimeout(function () {
+            checkInputs(items);
+        }, 1000);
+    }
+
+    // Function for MultiSelect OrderStatus
+    function checkInputs(elements) {
+        elements.each(function () {
+            var element = $(this);
+            var input = element.children("input");
+
+            input.prop("checked", element.hasClass("k-state-selected"));
+        });
+    };
+
+    function onOrderStatusChange() {
+        var items = this.ul.find("li");
+        checkInputs(items);
+    }
+
+    function initTemplate(e) {
+        $(".templateCell").each(function () {
+            eval($(this).children("script").last().html());
+        })
+
+        // iterate the table rows and apply custom row and cell styling
+        var rows = e.sender.tbody.children();
+        for (var j = 0; j < rows.length; j++) {
+            var row = $(rows[j]);
+            var dataItem = e.sender.dataItem(row);
+
+            var orderStatus = dataItem.get("OrderStatus");
+
+            row.removeClass("k-alt");
+
+            if (orderStatus == "CN") {
+                row.addClass("ordercancelled");
+            }
+            if (orderStatus == "SH") {
+                row.addClass("ordershipped");
+            }
+            if (orderStatus == "PH") {
+                row.addClass("orderpartiallyshipped");
+            }
+            if (orderStatus == "RP") {
+                row.addClass("orderreceived");
+            }
+            if (orderStatus == "IP" || orderStatus == "PS") {
+                row.addClass("orderpendingshipment");
+            }
+        }
+    }
+
+    function onTrackingNumberColumnChange(e) {
+
+    }
+
+    var selectedOrder;
+
+    function onChange(e) {
+        var grid = e.sender;
+        var currentDataItem = grid.dataItem(this.select());
+        selectedOrder = currentDataItem.Id;
+
+        //$.get("/Order/OrderDetails", {Id: currentDataItem.Id}, function (data) { })
+        window.location.href = '@Url.Action("OrderDetails", "Order")/' + currentDataItem.Id;
+    }
+
+    function onDataBound(e) {
+        var gridWrapper = e.sender.wrapper;
+        var gridDataTable = e.sender.table;
+        var gridDataArea = gridDataTable.closest(".k-grid-content");
+
+        gridWrapper.toggleClass("no-scrollbar", gridDataTable[0].offsetHeight < gridDataArea[0].offsetHeight);
+    }
+
+    // These 2 functions below is for filtering
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
+    function getBoolean(str) {
+        if ("true".startsWith(str)) {
+            return true;
+        } else if ("false".startsWith(str)) {
+            return false;
+        } else {
+            return null;
+        }
+    }
+
+    function onSearch(e) {
+        var grid = $('#grid').data('kendoGrid');
+
+        // blank filter and push additional parameters
+        var filter = { logic: 'and', filters: [] };
+        var filterStatus = { logic: 'or', filters: [] };
+
+        var valueByOrderNumber = $('#searchByOrderNumber').val();
+        var valueByProductCode = $('#searchByProductCode').val();
+        var valueByShortDesc = $('#searchByShortDesc').val();
+        var statuses = $("#orderstatus").data("kendoMultiSelect").dataItems()
+
+        if (valueByOrderNumber) {
+            if (isNumeric(valueByOrderNumber)) {
+                filter.filters.push({
+                    field: "Id",
+                    operator: 'eq',
+                    value: valueByOrderNumber
+                });
+            }
+        }
+        var range = $("#orderDateRange").data("kendoDateRangePicker").range();
+        if (range.start) {
+            var startDate = new Date(range.start);
+            //startDate.setYear(range.start.substring(6, 10));
+            //startDate.setMonth(range.start.substring(0, 2) - 1);
+            //startDate.setDate(range.start.substring(3, 5));
+            startDate.setHours(0);
+            startDate.setMinutes(0);
+            startDate.setSeconds(0);
+        }
+        if (range.end) {
+            var endDate = new Date(range.end);
+            //endDate.setYear(range.end.substring(6, 10));
+            //endDate.setMonth(range.end.substring(0, 2) - 1);
+            //endDate.setDate(range.end.substring(3, 5));
+            endDate.setHours(23);
+            endDate.setMinutes(59);
+            endDate.setSeconds(59);
+        }
+
+        if (range) {
+            if (range.start) {
+                filter.filters.push({
+                    field: "DateCreated",
+                    operator: 'gte',
+                    value: startDate
+                })
+            }
+            if (range.end) {
+                filter.filters.push({
+                    field: "DateCreated",
+                    operator: 'lte',
+                    value: endDate
+                })
+            }
+        }
+
+        if (valueByProductCode.length > 0) {
+            filter.filters.push({
+                field: "ProductCodeString",
+                operator: "contains",
+                value: valueByProductCode
+            });
+        }
+
+        if (valueByShortDesc.length > 0) {
+            filter.filters.push({
+                field: 'ShortDescString',
+                operator: 'contains',
+                value: valueByShortDesc
+            })
+        }
+
+        if (statuses.length > 0) {
+            for (var i = 0; i < statuses.length; i++) {
+                filterStatus.filters.push({
+                    field: 'OrderStatus',
+                    operator: 'eq',
+                    value: statuses[i].Code
+                });
+            };
+            filter.filters.push(filterStatus);
+        }
+
+        grid.dataSource.filter(filter);
+
+        //if (x.field) {
+        //    var type = grid.dataSource.options.schema.model.fields[x.field].type;
+        //    if (type == 'string') {
+        //        filter.filters.push({
+        //            field: x.field,
+        //            operator: 'contains',
+        //            value: e.target.value
+        //        })
+        //    }
+        //    else if (type == 'number') {
+        //        if (isNumeric(e.target.value)) {
+        //            filter.filters.push({
+        //                field: x.field,
+        //                operator: 'eq',
+        //                value: e.target.value
+        //            });
+        //        }
+        //    }
+        //    else if (type == 'date') {
+        //        var data = grid.dataSource.data();
+        //        for (var i = 0; i < data.length ; i++) {
+        //            var dateStr = kendo.format(x.format, data[i][x.field]);
+        //            // change to includes() if you wish to filter that way https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes
+        //            if (dateStr.startsWith(e.target.value)) {
+        //                filter.filters.push({
+        //                    field: x.field,
+        //                    operator: 'eq',
+        //                    value: data[i][x.field]
+        //                })
+        //            }
+        //        }
+        //    } else if (type == 'boolean' && getBoolean(e.target.value) !== null) {
+        //        var bool = getBoolean(e.target.value);
+        //        filter.filters.push({
+        //            field: x.field,
+        //            operator: 'eq',
+        //            value: bool
+        //        });
+        //    }
+        //}
+    }
+
+    //#region OrderTrackingEditor EditorTemplate
+    function ongridOrderDetailChange(e) {
+        var elementProductIds = $("#ProductIds");
+        var elementProductQtys = $("#ProductQtys");
+        var elementGrid = $("#gridOrderDetail").data("kendoGrid");
+
+        // save the values
+        elementProductIds.val(this.selectedKeyNames().join(","));
+
+        var qtys = "";
+        var gridSelectedRows = $("#gridOrderDetail").data("kendoGrid").select();
+        gridSelectedRows.each(function () {
+            var record = $("#gridOrderDetail").data("kendoGrid").dataItem($(this));
+            qtys += record.ProductId.toString() + ',' + record.Qty.toString() + ';';
+        })
+
+        elementProductQtys.val(qtys.substring(0, qtys.length - 1));
+    }
+
+    function ongridOrderDetailQtyChange(e) {
+        var elementProductQtys = $("#ProductQtys");
+        var grid = $(event.srcElement).closest("[data-role=grid]").data("kendoGrid");
+
+        var rowData = grid.dataItem($(e).closest("tr"));
+        rowData.Qty = e.value;
+
+        var qtys = "";
+        var gridSelectedRows = $("#gridOrderDetail").data("kendoGrid").select();
+        gridSelectedRows.each(function () {
+            var record = $("#gridOrderDetail").data("kendoGrid").dataItem($(this));
+            qtys += record.ProductId.toString() + ',' + record.Qty.toString() + ';';
+        })
+
+        elementProductQtys.val(qtys.substring(0, qtys.length - 1));
+    }
+
+    function gridOrderDetail_orderInfo(e) {
+        var parentRow = $(event.srcElement).closest("tr");
+        var parentGrid = $(event.srcElement).closest("[data-role=grid]").data("kendoGrid");
+        var parentModel = parentGrid.dataItem(parentRow);
+        return {
+            orderId: parentModel.Id
+        }
+    }
+
+    function ongridSave(e) {
+        var elementProductIds = $("#ProductIds");
+        var elementProductQtys = $("#ProductQtys");
+        e.model.set("ProductIds", elementProductIds.val());
+        e.model.set("ProductQtys", elementProductQtys.val());
+
+        //e.sender.one("dataBound", function () {
+        //    e.sender.dataSource.read();
+        //});
+        e.sender.dataSource.read();
+    }
+
+    function ongridCancel(e) {
+        e.sender.dataSource.read();
+    }
+    //#endregion
+
+    $(document).ready(function () {
+        var orderDateRange = $("#orderDateRange").data("kendoDateRangePicker");
+        var range = { start: '@Model.OrderDateStart', end: '@Model.OrderDateEnd' };
+        orderDateRange.range(range);
+
+        var inputOrderNumber = $("#searchByOrderNumber");
+        inputOrderNumber.val("@Model.OrderNumber");
+    });
+
+</script>
+

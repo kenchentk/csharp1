@@ -1,0 +1,110 @@
+﻿@model IEnumerable<StoreFront2.ViewModels.CartViewModel>
+@using StoreFront2.Data
+
+@{
+    var access = new UserPermission();
+    var _usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    var _site = new StoreFront2.Models.Site();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        _usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+        _site = (StoreFront2.Models.Site)Session["Site"];
+    }
+}
+
+<div class="container">
+    @{
+        // Check for authorization
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            <div class="row">
+                                <div class="col-xs-9">
+                                    <h5><span class="fa fa-users"></span> Used Group</h5>
+                                </div>                             
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        @(Html.Kendo().Grid<StoreFront2.ViewModels.GroupsViewModel>()
+                               .Name("grid")
+                               .Columns(columns =>
+                               {
+                                   columns.Bound(c => c.Id).Hidden();
+                                   columns.Bound(c => c.Name).Title("Name").Width(50);
+                                   columns.Bound(c => c.Desc).Title("Description").Sortable(false).Width(75);
+                                   columns.Bound(c => c.CurrentBudgetLeft).Title("Budget Remianing").Sortable(false).Width(75);
+                                   columns.Bound(c => c.TimeRefresh).Title("Date Refresh Price").Sortable(false).Format("{0:MM/dd/yyyy}").Title("Order Date").Width(75);
+                                   columns.Bound(c => c.DefaultGroupId).ClientTemplate("<p>#= DefaultGroupId != null ? 'Default' : '<button onclick=myFunction(this)>Active</button>' # </p>").Width(75).Title("Status");                                   
+                               })
+                               .Selectable(selectable =>
+                               {
+                                   selectable.Mode(GridSelectionMode.Single);
+                                   selectable.Type(GridSelectionType.Row);
+                               })
+                               .Pageable()
+                               .Sortable()
+                               .Scrollable(scrolling => scrolling.Enabled(true))
+                               .DataSource(dataSource => dataSource
+                                   .Ajax()
+                                   .Model(c => c.Id(u => u.Id))
+                                   .Read(read => read.Action("ReadGroupOfUsers", "Manage"))
+                                   .PageSize(50)
+                               )                              
+                             )
+                    </div>                
+                </div>
+            </div>
+        </div>
+        }
+
+</div>
+<script>
+    function myFunction(e) {        
+        var grid = $(e).closest('.k-grid').data('kendoGrid');
+        var dataItem = grid.dataItem($(e).closest('tr'));
+        grid.select($(e).closest('tr'));
+        //console.log(dataItem.Id);
+         var usedGropViewModel = {
+             groupId: dataItem.Id
+         }
+          $.ajax({
+                datatype: "json",
+                type: "POST",
+                url: "/manage/SetDefaultGroupToUser",
+                data: usedGropViewModel,         
+                success: function (data) {
+                     $("#grid").data("kendoGrid").dataSource.read();
+                }
+        })
+    }
+    /*
+     function ActiveGroup(e) {
+        e.preventDefault();
+         var dataItem = this.dataItem($(e.currentTarget).closest("tr"));    
+         var usedGropViewModel = {
+             groupId: dataItem.Id
+         }
+           $.ajax({
+                datatype: "json",
+                type: "POST",
+                url: "/manage/SetDefaultGroupToUser",
+                data: usedGropViewModel,         
+                success: function (data) {
+                     $("#grid").data("kendoGrid").dataSource.read();
+                }
+        })
+       
+    } */
+</script>
+
+

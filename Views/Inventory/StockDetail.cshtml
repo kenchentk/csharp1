@@ -1,0 +1,1630 @@
+﻿@using StoreFront2.Models
+@using StoreFront2.Models
+@using StoreFront2.ViewModels
+@using StoreFront2.Data;
+@using StoreFront2.Helpers
+@model StoreFront2.ViewModels.ProductViewModel
+@{
+                /**/
+
+                var access = new UserPermission();
+                var usersetting = new UserSetting();
+                var _storeFrontName = "Defaults";
+                var _setting = new SystemSetting();
+                if (Session["Site"] != null)
+                {
+                    Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+                    _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+                    _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+                    access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+                    usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+                }
+}
+<style>
+
+    .k-textbox {
+        width: 100%;
+    }
+
+    .file-icon {
+        display: inline-block;
+        float: left;
+        width: 48px;
+        height: 48px;
+        margin-left: 10px;
+        margin-top: 13.5px;
+    }
+
+    .img-file {
+        background-image: url(/content/defaults/web/jpg.png);
+    }
+
+    .doc-file {
+        background-image: url(/content/defaults/web/doc.png);
+    }
+
+    .pdf-file {
+        background-image: url(/content/defaults/web/pdf.png);
+    }
+
+    .xls-file {
+        background-image: url(/content/defaults/web/xls.png);
+    }
+
+    .zip-file {
+        background-image: url(/content/defaults/web/zip.png);
+    }
+
+    .default-file {
+        background-image: url(/content/defaults/web/default.png);
+    }
+
+    .file-heading {
+        font-family: Arial;
+        font-size: 1.1em;
+        display: inline-block;
+        float: left;
+        width: 60%;
+        margin: 0 0 0 20px;
+        height: 25px;
+        -ms-text-overflow: ellipsis;
+        -o-text-overflow: ellipsis;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .file-name-heading {
+        font-weight: bold;
+        margin-top: 20px;
+    }
+
+    .file-size-heading {
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    li.k-file div.file-wrapper {
+        position: relative;
+        height: 75px;
+        width: 100%;
+    }
+
+</style>
+<style>
+    /* The Modal (background) */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      padding-top: 100px; /* Location of the box */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgb(0,0,0); /* Fallback color */
+      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    }
+
+    /* Modal Content */
+    .modal-content {
+      position: relative;
+      background-color: #fefefe;
+      margin: auto;
+      padding: 0;
+      border: 1px solid #888;
+      width: 80%;
+      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+      -webkit-animation-name: animatetop;
+      -webkit-animation-duration: 0.4s;
+      animation-name: animatetop;
+      animation-duration: 0.4s
+    }
+
+    /* The Close Button */
+    .close {
+      color: white;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: #000;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .modal-header {
+      padding: 2px 16px;
+      background-color: #5cb85c;
+      color: white;
+    }
+
+    .modal-body {padding: 2px 16px;}
+
+    .modal-footer {
+      padding: 2px 16px;
+      background-color: #5cb85c;
+      color: white;
+    }
+</style>
+@{
+    if ((ViewBag.StatusMessage ?? "").Length > 0)
+    {
+        <div id="StatusBar" class="alert alert-warning alert-dismissible" role="alert" auto-close="3000" style="text-align:center;">
+            <span type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></span>
+            <strong>@ViewBag.StatusMessage</strong>
+        </div>
+    }
+}
+<div class="container">
+    <div class="col-md-2">
+        <button class="btn btn-success" onclick="backLink(event)">Back to List</button>
+    </div>
+    <div class="col-md-10">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+
+            <fieldset @(access.InventoryItemModify == 0 ? "disabled" : "")>
+                <div class="row">
+                    <div style="margin:5px;">
+                        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="panel with-nav-tabs panel-default">
+                        <div class="panel-heading">
+                            <ul class="nav nav-tabs">
+                                <li class="active"><a href="#tab1default" data-toggle="tab">Summary</a></li>
+                                <li><a href="#tab2default" data-toggle="tab">Information</a></li>
+                                <li><a href="#tabInventory" data-toggle="tab">Inventory</a></li>
+                                <li><a href="#tab3default" data-toggle="tab">Categories</a></li>
+                                @*<li><a href="#tabVendors" data-toggle="tab">Vendors</a></li>*@
+                                <li><a href="#tab4default" data-toggle="tab">Images</a></li>
+                                <li><a href="#tabfiles" data-toggle="tab">Files</a></li>
+                                <li><a href="#tabVariants" data-toggle="tab">Variants</a></li>
+                            </ul>
+                        </div>
+                        <div class="panel-body">
+                            <div class="tab-content">
+                                <div class="tab-pane fade in active" id="tab1default">
+                                    <div class="row">
+                                        <div class="form-group col-md-6">
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <div class="col-md-4">
+                                            </div>
+                                            <div class="col-md-4">
+                                                @{if (access.InventoryItemModify == 1)
+                                                    { <input id="btnSave" type="submit" value="Save" class="btn btn-success" /> }
+                                                }
+                                            </div>
+                                            <div class="col-md-4">
+                                                @{if (Model.Status == 1)
+                                                    { <input id="btnStatus" type="button" value="Deactivate" class="btn btn-danger" onclick="onBtnStatusClick(event)" /> }
+                                                    else
+                                                    { <input id="btnStatus" type="button" value="Activate" class="btn btn-success" onclick="onBtnStatusClick(event)" /> }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="k-card k-card-body">
+                                        <div class="form-horizontal">
+                                            <h4>Summary</h4>
+                                            <div class="row" id="rowImage">
+                                                <div class="col-md-12">
+                                                    @(Html.Kendo().ScrollView()
+                                                                                .Name("ProductImages")
+                                                                                .EnablePager(false)
+                                                                                .ContentHeight("100%")
+                                                                                .HtmlAttributes(new { style = "height:400px; max-width:100%" })
+                                                                                .TemplateId("scrollview-template")
+                                                                                .DataSource(s => s.Read(read => read.Action("Read_UploadedImages", "Inventory", new { productId = Model.Id })))
+                                                                                .DataSource(d => d
+                                                                                .Custom().Transport(t => t.Read(read => read.Action("Read_UploadedImages", "Inventory", new { productId = Model.Id }))).ServerPaging(true).PageSize(1))
+
+                                                    )
+                                                    @*<a class="thumbnail" href="/@Url.Content(@Model.ImageRelativePath)" target="_blank">
+                                <img id="imgProduct"
+                                     class="media-object center"
+                                     src="/@Url.Content("Content/" + _storeFrontName + "/Images/" + Path.GetFileName(Model.ImageRelativePath ?? "default.png"))"
+                                     alt="@Path.GetFileName(Model.ImageRelativePath ?? "")"
+                                     title="@Path.GetFileName(Model.ImageRelativePath ?? "")"
+                                     onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Images/default.png")'"
+                                     style="width: 216px; height: 216px;" />
+                            </a>*@
+                                                </div>
+                                            </div>
+                                            <hr />
+                                            <fieldset disabled>
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.Status, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @{if (Model.Status == 1)
+                                                            { <span id="lblStatus" class="k-textbox" style="width:auto">Active</span> }
+                                                            else
+                                                            { <span id="lblStatus" class="k-textbox" style="width:auto">Inactive</span> }
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.ProductCode, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.EditorFor(model => model.ProductCode, new { htmlAttributes = new { @class = "form-control" } })
+                                                        @Html.ValidationMessageFor(model => model.ProductCode, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.Upc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.EditorFor(model => model.Upc, new { htmlAttributes = new { @class = "form-control" } })
+                                                        @Html.ValidationMessageFor(model => model.Upc, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.ShortDesc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.TextAreaFor(model => model.ShortDesc, 2, 50, new { htmlAttributes = new { @class = "form-control"} })
+                                                        @Html.ValidationMessageFor(model => model.ShortDesc, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.LongDesc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.TextAreaFor(model => model.LongDesc, 5, 100, new { htmlAttributes = new { @class = "form-control"} })
+                                                        @Html.ValidationMessageFor(model => model.LongDesc, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.EMSQty, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-5">
+                                                        @Html.EditorFor(model => model.EMSQty, new { htmlAttributes = new { @class = "form-control", @min = "0", @max = 999999999 } })
+                                                        @Html.ValidationMessageFor(model => model.EMSQty, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                                @{ if (_setting.DisplayProductPrices == 1 || true)
+                                                    {
+                                                        <div class="form-group">
+                                                            @Html.LabelFor(model => model.SellPrice, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                            <div class="col-md-10">
+                                                                @Html.EditorFor(model => model.SellPrice, new { htmlAttributes = new { @class = "form-control" } })
+                                                                @Html.ValidationMessageFor(model => model.SellPrice, "", new { @class = "text-danger" })
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                }
+                                                @{ if (_setting.DisplayProductPrices == 1 || true)
+                                                    {
+                                                        <div class="form-group">
+                                                            @Html.LabelFor(model => model.SellPriceCAD, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                            <div class="col-md-10">
+                                                                @Html.EditorFor(model => model.SellPriceCAD, new { htmlAttributes = new { @class = "form-control" } })
+                                                                @Html.ValidationMessageFor(model => model.SellPriceCAD, "", new { @class = "text-danger" })
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                }
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                    <br />
+                                </div>
+                                <div class="tab-pane fade" id="tab2default">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <div class="col-md-6">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input id="btnSave" type="submit" value="Save" class="btn btn-success" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="k-card k-card-body">
+                                        <h4>Product Information</h4>
+                                        <hr />
+                                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                                        @Html.HiddenFor(model => model.Id)
+                                        @Html.HiddenFor(model => model.Status)
+                                        @Html.HiddenFor(model => model.PickPackCode)
+                                        @Html.HiddenFor(model => model.ImageRelativePath)
+                                        @Html.HiddenFor(model => model.FileRelativePath)
+
+                                        @{ if (_setting.TurnOnProductMinMaxLevels == 1)
+                                            {
+                                                <input type="hidden" id="valTurnOnProductMinMaxLevels" value="1" />
+                                            }
+                                            else
+                                            {
+                                                <input type="hidden" id="valTurnOnProductMinMaxLevels" value="0" />
+                                            }
+                                        }
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.ProductCode, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.ProductCode, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.ProductCode, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Upc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Upc, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Upc, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.ShortDesc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.TextAreaFor(model => model.ShortDesc, 2, 50, new { htmlAttributes = new { @class = "form-control"} })
+                                                @Html.ValidationMessageFor(model => model.ShortDesc, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.LongDesc, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.TextAreaFor(model => model.LongDesc, 5, 100, new { htmlAttributes = new { @class = "form-control"} })
+                                                @Html.ValidationMessageFor(model => model.LongDesc, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Weight, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Weight, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Weight, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Length, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Length, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Length, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Width, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Width, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Width, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Height, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.Height, new { htmlAttributes = new { @class = "form-control" } })
+                                                @Html.ValidationMessageFor(model => model.Height, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.Restricted, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                <div class="checkbox">
+                                                    @Html.EditorFor(model => model.Restricted)
+                                                    @Html.ValidationMessageFor(model => model.Restricted, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @{ if (_setting.DisplayProductPrices == 1 || true)
+                                            {
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.SellPrice, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.EditorFor(model => model.SellPrice, new { htmlAttributes = new { @class = "form-control" } })
+                                                        @Html.ValidationMessageFor(model => model.SellPrice, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        @{ if (_setting.DisplayProductPrices == 1 || true)
+                                            {
+                                                <div class="form-group">
+                                                    @Html.LabelFor(model => model.SellPriceCAD, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                    <div class="col-md-10">
+                                                        @Html.EditorFor(model => model.SellPriceCAD, new { htmlAttributes = new { @class = "form-control" } })
+                                                        @Html.ValidationMessageFor(model => model.SellPriceCAD, "", new { @class = "text-danger" })
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        <div id="divMinMaxEnable">
+                                            <div class="form-group">
+                                                @Html.LabelFor(model => model.MinQty, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                <div class="col-md-5">
+                                                    @Html.EditorFor(model => model.MinQty, new { htmlAttributes = new { @class = "form-control", @min = "0", @max = Model.MaxQty } })
+                                                    @Html.ValidationMessageFor(model => model.MinQty, "", new { @class = "text-danger" })
+                                                </div>
+                                                <div class="checkbox col-md-5">
+                                                    @Html.EditorFor(model => model.EnableMinQty)
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                @Html.LabelFor(model => model.MaxQty, htmlAttributes: new { @class = "control-label col-md-2" })
+                                                <div class="col-md-5">
+                                                    @Html.EditorFor(model => model.MaxQty, new { htmlAttributes = new { @class = "form-control", @min = Model.MinQty, @max = "99999" } })
+                                                    @Html.ValidationMessageFor(model => model.MaxQty, "", new { @class = "text-danger" })
+                                                </div>
+                                                <div class="checkbox col-md-5">
+                                                    @Html.EditorFor(model => model.EnableMaxQty)
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.EstRestockDate, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-5">
+                                                @Html.Kendo().DatePickerFor(model => model.EstRestockDate).HtmlAttributes(new { style = "width: 100%", title = "Estimated Restock Date" })
+                                            </div>
+                                        </div>
+
+                                        @*@{
+                    if (Model.EMSQty <= 0 && _setting.DisplayInventoryAvailability == 1 && _setting.DisplayInventoryAvailabilityFor == "Actual Inventory")
+                    {
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.EstRestockDate, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-5">
+                                @Html.Kendo().DatePickerFor(model => model.EstRestockDate).HtmlAttributes(new { style = "width: 100%", title = "Estimated Restock Date" })
+                            </div>
+                        </div>
+                    }
+                }*@
+
+                                        @*<div class="form-group">
+                    @Html.LabelFor(model => model.Uom, htmlAttributes: new { @class = "control-label col-md-2" })
+                    <div class="col-md-10">
+                        @(Html.Kendo().DropDownListFor(model => model.Uom)
+                        .OptionLabel("Select Unit of Measure")
+                        .DataTextField("Acronym")
+                        .DataValueField("Acronym")
+                        .HtmlAttributes(new { style = "width: 150px;" })
+                        .DataSource(ds =>
+                        {
+                        ds.Read("GetUoms", "Inventory");
+                        })
+                        )
+                        @Html.ValidationMessageFor(model => model.Uom, "", new { @class = "text-danger" })
+                    </div>
+                </div>*@
+                                        @Html.HiddenFor(model => model.CreatedBy)
+                                        @Html.HiddenFor(model => model.DateCreated)
+                                        @Html.HiddenFor(model => model.UserId)
+                                        @Html.HiddenFor(model => model.UserName)
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="tabInventory">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <div class="col-md-6">
+                                            </div>
+                                            <div class="col-md-6">
+                                                @{if (access.InventoryItemModify == 1)
+                                                    {
+                                                        <input id="btnSave" type="submit" value="Save" class="btn btn-success" />
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="k-card k-card-body">
+                                        <h4>Product Information</h4>
+                                        <hr />
+                                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(model => model.EMSQty, htmlAttributes: new { @class = "control-label col-md-2" })
+                                            <div class="col-md-10">
+                                                @Html.EditorFor(model => model.EMSQty, new { htmlAttributes = new { @class = "form-control", @min = "0", @max = "999999999" } })
+                                                @Html.ValidationMessageFor(model => model.EMSQty, "", new { @class = "text-danger" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade" id="tab3default">
+
+                                    <div class="k-card k-card-body">
+                                        <h4>Categories</h4>
+                                        <br />
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <button type="button" id="myBtn">Add Categories</button>
+                                                @*<button id="addCategories" type="button" onclick="onAddCategories(51)">Add Categories</button>*@
+                                                @*<input id="addCategories" type="submit" value="Add Categories" onclick="onAddCategories(51)" />*@
+                                            </div>
+                                            <div class="col-md-9">
+                                            </div>
+                                        </div>
+                                        <br />
+                                        <!-- The Modal -->
+                                        <div id="myModal" class="modal" width="50%">
+                                            <!-- Modal content -->
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <span class="close">&times;</span>
+                                                    <h2>Please Select Categories</h2>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <table border="2" cellpadding="2" cellspacing="2" width="100%">
+                                                        <tr>
+                                                            <th><b>Category Name</b></th>
+                                                            <th><b>Description</b></th>
+                                                            <th></th>
+                                                        </tr>
+                                                        @foreach (CategoryViewModel c in ViewBag.availableCategories)
+                                                        {
+                                                            <tr>
+                                                                <td>@c.Name</td>
+                                                                <td>@c.Desc</td>
+                                                                <td> 
+                                                                    @*<input id="btnAddCategories" type="submit" value="Add Category" onclick="onAddCategories(@c.Id)" />*@
+                                                                    <input type="checkbox" id="check_@c.Id" name="chkbox" value="@c.Id" onclick="onAddCategories()">
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </table>
+                                                    @*<input id="btnConfirmCategories" type="submit" value="CONFRIM ADD" onclick="onConfirmCategories()" />*@
+                                                    <input id="btnSave" type="submit" value="Add Categories" class="btn btn-success" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <table border="2" cellpadding="2" cellspacing="2" width="60%">
+                                                <tr>
+                                                    <th><b>Category Name</b></th>
+                                                    <th><b>Description</b></th>
+                                                    <th></th>
+                                                </tr>
+                                                @foreach (ProductCategoriesVM pc in Model.ProductCategories)
+                                                {
+                                                    <tr>
+                                                        <td>@pc.Name</td>
+                                                        <td>@pc.Desc</td>
+                                                        <td>
+                                                            @*<button id="removeCategories" type="button" onclick="onRemoveCategories(@pc.Id)">Remove</button>*@
+                                                            <input id="btnremoveCategories" type="submit" value="Remove" onclick="onRemoveCategories(@pc.Id)" />
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </table>
+                                        </div>
+                                        @*@(Html.Kendo().ListBox()
+                        .Name("Categories")
+                        .HtmlAttributes(new { style = "width: 50%; height: 500px" })
+                        .DataValueField("Id")
+                        .DataTextField("Name")
+                        .Draggable(true)
+                        .Toolbar(toolbar =>
+                        {
+                            toolbar.Position(Kendo.Mvc.UI.Fluent.ListBoxToolbarPosition.Right);
+                            toolbar.Tools(tools => tools
+                                                .Remove());
+                        })
+                        .DataSource(source =>
+                        {
+                            source.Read(read =>
+                                                {
+                                                    read.Action("Read_Categories", "Inventory", new { productId = Model.Id });
+                                                });
+                        })
+                        .Events(ev => ev
+                        .Remove("CategoriesRemove")
+                        )
+                )*@
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="tabVariants">
+                                    <h1>Product Variants</h1>
+                                    @*
+        Categories: <select name="subject" id="subject">
+            <option value="" selected="selected">Select Categories</option>
+        </select>
+        <br><br>
+        Items: <select name="topic" id="topic">
+            <option value="" selected="selected">Please select Category first</option>
+        </select>
+        <br><br>
+            Color: <select name="chapter" id="chapter">
+                <option value="" selected="selected">Please select Item first</option>
+            </select>
+            <br><br>
+
+            @Html.DropDownList("VariantParentsId", new SelectList(ViewBag.VariantParents, "Id", "VariantParentName"))
+            @Html.DropDownListFor(model => model.Id, new SelectList(ViewBag.VariantParents, "Id", "VariantParentName"))
+                                    *@
+
+                                    @*@foreach (ProductVariantsVM pv in Model.ProductVariants)
+                                    {
+                                        @text1 = @pv.Variant1Name;
+                                    }*@
+
+                                    <div class="k-card k-card-body">
+                                        <br />
+                                        <div class="row">
+                                            <table cellpadding="2" cellspacing="2" width="60%">
+                                                <tr>
+                                                    <td width="20%">
+                                                        <b>Variant #1:</b>
+                                                    </td>
+                                                    <td width="40%">
+                                                        @Html.DropDownList("VariantParent1", new SelectList(ViewBag.VariantParents, "Id", "VariantParentName", @Model.VariantParent1Id), new { @onchange = "reload_VariantDetails(1, this.value)" })
+                                                        @Html.DropDownList("VariantDetail1", new SelectList(ViewBag.VariantDetails1, "Id", "VariantDetailName", @Model.VariantDetail1Id))
+                                                    </td>
+                                                    <td width="40%">
+                                                        @*<input type="hidden" id="txtTestV1" name="txtTestV1" value="" />
+                                                        @Model.VariantDetail1Name
+                                                        <button type="button" id="btnChangeVariant1" onclick="alert(@Model.Id)">
+                                                            Change
+                                                        </button>*@
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td width="20%">
+                                                        <b>Variant #2:</b>
+                                                    </td>
+                                                    <td width="40%">
+                                                        @Html.DropDownList("VariantParent2", new SelectList(ViewBag.VariantParents, "Id", "VariantParentName", @Model.VariantParent2Id), new { @onchange = "reload_VariantDetails(2, this.value)" })
+                                                        @Html.DropDownList("VariantDetail2", new SelectList(ViewBag.VariantDetails2, "Id", "VariantDetailName", @Model.VariantDetail2Id))
+                                                    </td>
+                                                    <td width="40%">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td width="20%">
+                                                        <b>Variant #3:</b>
+                                                    </td>
+                                                    <td width="40%">
+                                                        @Html.DropDownList("VariantParent3", new SelectList(ViewBag.VariantParents, "Id", "VariantParentName", @Model.VariantParent3Id), new { @onchange = "reload_VariantDetails(3, this.value)" })
+                                                        @Html.DropDownList("VariantDetail3", new SelectList(ViewBag.VariantDetails3, "Id", "VariantDetailName", @Model.VariantDetail3Id))
+                                                    </td>
+                                                    <td width="40%">
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade" id="tabVendors">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <div class="col-md-6">
+                                            </div>
+                                            <div class="col-md-6">
+                                                @{if (access.VendorModify == 1)
+                                                    {
+                                                        @*<input id="btnSaveCategory" type="submit" value="Save" class="btn btn-success" />*@
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="k-card k-card-body">
+                                        <h4>Vendors</h4>
+                                        <hr />
+                                        @*<div class="col-md-10">
+                    <div class="row">
+                        <div class="col-md-12">
+                            Fulfilled By Vendor
+                            @(Html.Kendo().Switch().Name("IsFulfilledByVendor").Checked(Model.IsFulfilledByVendor).Events(ev => ev.Change("onFulfilledByVendor")))
+                        </div>
+                    </div>
+                    <fieldset id="fieldsetFulfilledByVendor" disabled>
+                        <table>
+                            <tr>
+                                <th>
+                                    Available
+                                </th>
+                                <th>
+                                    Associated
+                                </th>
+                            </tr>
+                            <tr>
+                                <td valign="top">
+                                    @(Html.Kendo().ListBox()
+                                                    .Name("vendorSource")
+                                                    .Toolbar(t =>
+                                                    {
+                                                        t.Position(Kendo.Mvc.UI.Fluent.ListBoxToolbarPosition.Right);
+                                                        if (access.VendorModify == 1)
+                                                        {
+                                                            t.Tools(tools => tools.TransferTo().TransferFrom());
+                                                        }
+                                                    })
+                                                    .ConnectWith("vendorSelected")
+                                                    .Selectable(ListBoxSelectable.Multiple)
+                                                    .DataTextField("Alias")
+                                                    .DataValueField("Id")
+                                                    .DataSource(source =>
+                                                    {
+                                                        source.Read(read => { read.Action("GetVendors", "Inventory", new { Id = Model.Id }); });
+                                                    })
+                                                    .Events(ev =>
+                                                    {
+                                                        ev.DataBound("setSelectedStockVendorValue");
+                                                    })
+                                    )
+                                </td>
+                                <td valign="top">
+                                    @(Html.Kendo().ListBox()
+                                                    .Name("vendorSelected")
+                                                    .Selectable(ListBoxSelectable.Multiple)
+                                                    .DataTextField("Alias")
+                                                    .DataValueField("Id")
+                                                    .BindTo(new List<VendorViewModel>())
+                                                    .Events(ev =>
+                                                    {
+                                                        ev.Add("onAddStockVendor");
+                                                        ev.Remove("onRemoveStockVendor");
+                                                    })
+                                    )
+                                </td>
+                            </tr>
+                        </table>
+                    </fieldset>
+                </div>
+                <hr />*@
+
+                                        <div class="k-card k-card-body">
+                                            <div class="row">
+                                                <div class="col-md-10">
+                                                    <div class="k-content wide" id="rowImage" style="width:inherit">
+                                                        <label for="uploadedImagesListBox">Uploaded Images</label>
+                                                        <br />
+                                                        @*@(Html.Kendo().ListBox()
+                                                .Name("uploadedImagesListBox")
+                                                .HtmlAttributes(new { style = "width: 100%; height: 500px" })
+                                                .DataValueField("Id")
+                                                .DataTextField("FileName")
+                                                .TemplateId("uploadedimages-template")
+                                                .Draggable(true)
+                                                .Toolbar(toolbar =>
+                                                 {
+                                                     toolbar.Position(Kendo.Mvc.UI.Fluent.ListBoxToolbarPosition.Right);
+                                                     toolbar.Tools(tools => tools
+                                                     .MoveUp()
+                                                     .MoveDown()
+                                                     .Remove());
+                                                 })
+                                                .DataSource(source =>
+                                                {
+                                                    source.Read(read =>
+                                                    {
+                                                        read.Action("Read_UploadedImages", "Inventory", new { productId = Model.Id });
+                                                    });
+                                                })
+                                                .Events(ev => ev
+                                                    .Remove("onUploadedImagesRemove")
+                                                    .Reorder("onUploadedImagesReorder")
+                                                )
+                                )*@
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <br />
+                                        </div>
+
+
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade" id="tab4default">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <div class="col-md-6">
+                                            </div>
+                                            <div class="col-md-6">
+                                                @{if (access.InventoryItemModify == 1)
+                                                    {
+                                                        @*<input id="btnSave" type="submit" value="Save" class="btn btn-success" />*@
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="k-card k-card-body">
+                                            <div class="row">
+                                                <div class="col-md-10">
+                                                    @(Html.Kendo().Upload()
+                                                                                .Name("images")
+                                                                                .TemplateId("imageTemplate")
+                                                                                .HtmlAttributes(new { aria_label = "images" })
+                                                                                .Async(a => a
+                                                                                    .Save("Async_Save", "Inventory", new { productId = @Model.Id })
+                                                                                    .Remove("Async_Remove", "Inventory", new { productId = @Model.Id }))
+                                                                                .Events(e => e
+                                                                                    .Success("onUploadSuccess")
+                                                                                    .Upload("onImageUpload"))
+                                                    )
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <br />
+                                        <div class="k-card k-card-body">
+                                            <div class="row">
+                                                <div class="col-md-10">
+                                                    <div class="k-content wide" id="rowImage" style="width:inherit">
+                                                        <label for="uploadedImagesListBox">Uploaded Images</label>
+                                                        <br />
+                                                        @(Html.Kendo().ListBox()
+                                                                                .Name("uploadedImagesListBox")
+                                                                                .HtmlAttributes(new { style = "width: 100%; height: 500px" })
+                                                                                .DataValueField("Id")
+                                                                                .DataTextField("FileName")
+                                                                                .TemplateId("uploadedimages-template")
+                                                                                .Draggable(true)
+                                                                                .Toolbar(toolbar =>
+                                                                                 {
+                                                                                     toolbar.Position(Kendo.Mvc.UI.Fluent.ListBoxToolbarPosition.Right);
+                                                                                     toolbar.Tools(tools => tools
+                                                                                     .MoveUp()
+                                                                                     .MoveDown()
+                                                                                     .Remove());
+                                                                                 })
+                                                                                .DataSource(source =>
+                                                                                {
+                                                                                    source.Read(read =>
+                                                                                    {
+                                                                                        read.Action("Read_UploadedImages", "Inventory", new { productId = Model.Id });
+                                                                                    });
+                                                                                })
+                                                                                .Events(ev => ev
+                                                                                    .Remove("onUploadedImagesRemove")
+                                                                                    .Reorder("onUploadedImagesReorder")
+                                                                                )
+                                                        )
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <br />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="tabfiles">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <div class="col-md-6">
+                                            </div>
+                                            <div class="col-md-6">
+                                                @{if (access.InventoryItemModify == 1)
+                                                    {
+                                                        @*<input id="btnSave" type="submit" value="Save" class="btn btn-success" />*@
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+
+                                        <div class="k-card k-card-body">
+                                            <h4>Digital Download</h4>
+                                        </div>
+                                        <br />
+                                        <div class="k-card k-card-body">
+                                            <div class="row">
+                                                @(Html.Kendo().Upload()
+                                                                                            .Name("files")
+                                                                                            .TemplateId("fileTemplate")
+                                                                                            .HtmlAttributes(new { aria_label = "files" })
+                                                                                            .Async(a => a
+                                                                                            .Save("Async_Save_Files", "Inventory")
+                                                                                            .Remove("Async_Remove_Files", "Inventory"))
+                                                                                            .Events(e => e.Success("onUploadFileSuccess").Upload("onFileUpload"))
+                                                )
+                                            </div>
+                                            <br />
+                                            <div class="k-card k-card-body">
+                                                <div class="row" id="rowFile">
+                                                    <table id="tableFile">
+                                                        <thead>
+                                                            <tr>
+                                                                <th style="min-width: 75px">File</th>
+                                                                <th style="min-width: 150px">Uploaded Date</th>
+                                                                <th style="min-width: 150px">Uploaded By</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="tbodyFile">
+                                                            @foreach (ProductFileVM pf in Model.ProductFiles)
+                                                            {
+                                                                <tr id="fileProductRow_@pf.Id">
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        <a class="thumbnail pull-left" href="/@Url.Content("Content/" + _storeFrontName + "/Images/" + Path.GetFileName(pf.RelativePath ?? "default.png"))" target="_blank">
+                                                                            <img id="fileProduct_@pf.Id"
+                                                                                 class="media-object"
+                                                                                 src="/Content/Defaults/Web/@pf.FileIcon"
+                                                                                 alt="@Path.GetFileName(pf.RelativePath ?? "")"
+                                                                                 title="@Path.GetFileName(pf.RelativePath ?? "")"
+                                                                                 onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Files/default.png")'"
+                                                                                 style="width: 72px; height: 72px;" />
+                                                                        </a>
+                                                                    </td>
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        @pf.DateCreated.ToString("MM/dd/yyyy")
+                                                                    </td>
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        @pf.UserName
+                                                                    </td>
+                                                                    <td class="col-sm-1 col-md-2">
+                                                                        <button type="button" id="btnRemoveFile" class="btn btn-danger" onclick="btnRemoveFileOnClick(this, @pf.Id)">
+                                                                            <span class="glyphicon glyphicon-remove"></span> Remove
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <br />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        }
+    </div>
+</div>
+<script id="scrollview-template" type="text/x-kendo-template">
+    <div style="text-align:center">
+        <a href="/#:data.RelativePath#" target="_blank">
+            <img src="/#:data.RelativePath#" style="width:auto; height: 380px;" title="#= data.FileName #" onerror="src='@Url.Content("/Content/" + _storeFrontName + "/Files/default.png")'" />
+        </a>
+        <p>#= data.FileName #</p>
+    </div>
+</script>
+<script id="uploadedimages-template" type="text/x-kendo-template">
+    <div class="row" style="width:100%">
+        <div class="col-md-3">
+            <span class="k-state-default"><h3>#:data.DisplayOrder#</h3></span>
+        </div>
+        <div class="col-md-3">
+            <span class="k-state-default" style="background-image: url('/#:data.RelativePath#')">
+                <a class="thumbnail pull-left" href="/#:data.RelativePath#" target="_blank">
+                    <img id="imgProduct_#=data.Id#"
+                         class="media-object"
+                         src="/#:data.RelativePath#"
+                         alt="#:data.FileName#"
+                         title="#:data.RelativePath.split('/').pop()#"
+                         onerror="src='/Content/@_storeFrontName/Images/default.png'"
+                         style="width: 72px; height: 72px;" />
+                </a>
+            </span>
+        </div>
+        <div class="col-md-6">
+            <span class="k-state-default">
+                <p>Created By : #: data.UserName #</p>
+                <p>Created On : #: kendo.toString(kendo.parseDate(DateCreated, 'MM/dd/yyyy'), 'MM/dd/yyyy')#</p>
+            </span>
+        </div>
+    </div>
+</script>
+<script id="imageTemplate" type="text/x-kendo-template">
+    <span class='k-progress'></span>
+    @*<div class='file-wrapper'>
+            <span class='file-icon #=addExtensionClass(files[0].extension)#'></span>
+            <h4 class='file-heading file-name-heading'>Name: #=name#</h4>
+            <h4 class='file-heading file-size-heading'>Size: #=size# bytes</h4>
+            <strong class="k-upload-status">
+                <button type='button' class='k-upload-action'></button>
+                <button type='button' class='k-upload-action'></button>
+            </strong>
+        </div>*@
+    <div class='file-wrapper'>
+        <span class='file-icon #=addExtensionClass(files[0].extension)#'></span>
+        <h4 class='file-heading file-name-heading'></h4>
+        <h4 class='file-heading file-size-heading'></h4>
+        <strong class="k-upload-status">
+            <button type='button' class='k-upload-action'></button>
+            <button type='button' class='k-upload-action'></button>
+        </strong>
+    </div>
+</script>
+<script id="fileTemplate" type="text/x-kendo-template">
+    <span class='k-progress'></span>
+    @*<div class='file-wrapper'>
+            <span class='file-icon #=addExtensionClass(files[0].extension)#'></span>
+            <h4 class='file-heading file-name-heading'>Name: #=name#</h4>
+            <h4 class='file-heading file-size-heading'>Size: #=size# bytes</h4>
+            <strong class="k-upload-status">
+                <button type='button' class='k-upload-action'></button>
+                <button type='button' class='k-upload-action'></button>
+            </strong>
+        </div>*@
+    <div class='file-wrapper'>
+        <span class='file-icon #=addExtensionClass(files[0].extension)#'></span>
+        <h4 class='file-heading file-name-heading'></h4>
+        <h4 class='file-heading file-size-heading'></h4>
+        <strong class="k-upload-status">
+            <button type='button' class='k-upload-action'></button>
+            <button type='button' class='k-upload-action'></button>
+        </strong>
+    </div>
+</script>
+<script type="text/javascript">
+    function addExtensionClass(extension) {
+        switch (extension) {
+            case '.jpg':
+            case '.img':
+            case '.png':
+            case '.gif':
+                return "img-file";
+            case '.doc':
+            case '.docx':
+                return "doc-file";
+            case '.xls':
+            case '.xlsx':
+                return "xls-file";
+            case '.pdf':
+                return "pdf-file";
+            case '.zip':
+            case '.rar':
+                return "zip-file";
+            default:
+                return "default-file";
+        }
+    }
+</script>
+<script>
+
+    function backLink(e) {
+        window.location.href = '@Url.Action("Stock", "Inventory")/';
+    }
+
+    function reload_VariantDetails(var_no, parentid) {
+        //alert(var_no);
+        //$("#txtTestV1").val(parentid);
+        $.ajax({
+            type: "POST",
+            datatype: "json",
+            url: '@Url.Action("reload_VariantDetails")',
+            contentType: "application/json",
+            data: JSON.stringify({ ParentId: parentid }),
+            success: function (data) {
+                //$("#txtTestV1").val(JSON.stringify(data));
+                //$("PartialContainer").html(result);
+                if (var_no==1) {
+                    $('#VariantDetail1').empty();
+                    $.each(data, function (val, text) {
+                        $('#VariantDetail1').append(
+                            $('<option></option>')
+                                .val(text.Id)
+                                .html(text.VariantDetailName)
+                            //     .prop('selected', true)   
+                        );
+                    });
+                }
+                if (var_no == 2) {
+                    $('#VariantDetail2').empty();
+                    $.each(data, function (val, text) {
+                        $('#VariantDetail2').append(
+                            $('<option></option>')
+                                .val(text.Id)
+                                .html(text.VariantDetailName)
+                            //     .prop('selected', true)   
+                        );
+                    });
+                }
+                if (var_no == 3) {
+                    $('#VariantDetail3').empty();
+                    $.each(data, function (val, text) {
+                        $('#VariantDetail3').append(
+                            $('<option></option>')
+                                .val(text.Id)
+                                .html(text.VariantDetailName)
+                            //     .prop('selected', true)   
+                        );
+                    });
+                }
+            }
+        })
+    }
+
+
+    function onAddCategories() {
+
+        var Array = [];
+        var checkboxes = document.querySelectorAll('input[name=chkbox]:checked');
+
+        for (var i = 0; i < checkboxes.length; i++) {
+            //alert(checkboxes[i].value);
+            Array.push(checkboxes[i].value);
+        }
+        //alert(JSON.stringify(Array));
+
+        $.ajax({
+            url: '@Url.Action("Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify(Array)
+        })
+    }
+
+    function onAddCategoriesOld(CId) {
+        var PId = $("#Id");
+        //alert(PId.val());
+        //alert(CId.val());
+        $.ajax({
+		url: '@Url.Action("Async_Add_Categories")',
+		type: "POST",
+		dataType: "json",
+		contentType: "application/json",
+            data: JSON.stringify({ ProductId: PId.val(), CategoryId: CId })
+		}).done(function () {
+			alert("Category added!");
+        });
+    }
+
+    function onRemoveCategories(e) {
+        //alert(e);
+        $.ajax({
+		url: '@Url.Action("Async_Remove_Categories")',
+		type: "POST",
+		dataType: "json",
+		contentType: "application/json",
+            data: JSON.stringify({ ProductCategoryId: e })
+		}).done(function () {
+			alert("Category removed!");
+		});
+    }
+
+
+
+    function btnRemoveImageOnClick(e, imageId) {
+        kendo.confirm("Remove Image?")
+        .done(function() {
+            $.ajax({
+                url: '@Url.Action("Async_Remove")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({fileNames: ["@Path.GetFileName(Model.ImageRelativePath ?? "")"], imageId: imageId, productId: @Model.Id })
+            });
+            $("#ImageRelativePath").val("Content/ImpDynamics/Images/default.png");
+            $(".media-object").each(function() {
+                this.src = "/@Url.Content("Content/ImpDynamics/Images/default.png")";
+                this.alt = "Default";
+                this.title = "Default";
+                this.parentElement.href = "/@Url.Content("Content/ImpDynamics/Images/default.png")";
+            });
+            $(e).parents('tr').remove();
+
+        })
+    }
+
+    function btnRemoveFileOnClick(e, imageId) {
+        kendo.confirm("Are you sure you want to remove this file?")
+        .done(function() {
+            $.ajax({
+                url: '@Url.Action("Async_Remove_Files")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({fileNames: ["@Path.GetFileName(Model.FileRelativePath ?? "")"], imageId: imageId, productId: @Model.Id })
+            });
+            $("#FileRelativePath").val("/@Url.Content("Content/ImpDynamics/Files/default.png")");
+
+        })
+    }
+
+    function onUploadSuccess(e) {
+        if (e.response.result == 'Error') {
+            alert("Error : " + e.response.message);
+        }
+        else {
+            //kendo.alert("Upload Completed");
+            $(".k-upload-status").each(function (index, item) {
+                $(item).remove();
+            });
+            $(".k-upload-files").each(function (index, item) {
+                $(item).remove();
+            })
+            var path = e.response.imageRelativePath;
+            $("#ImageRelativePath").val(path);
+
+            $(".media-object").each(function() {
+                var path = $("#ImageRelativePath").val();
+
+                this.src="/"+path;
+                this.alt=path.substr(path.lastIndexOf('/')+1);
+                this.title=path.substr(path.lastIndexOf('/')+1);
+                this.parentElement.href="/"+path;
+            });
+
+            var uploadedImagesDataSource = $("#uploadedImagesListBox").data("kendoListBox").dataSource;
+            uploadedImagesDataSource.read();
+
+            $(".k-upload-status").each(function (index, item) {
+                $(item).remove();
+            });
+            $(".k-upload-files").each(function (index, item) {
+                $(item).remove();
+            })
+        }
+    }
+
+    function onUploadFileSuccess(e) {
+        if (e.response.result == 'Error') {
+            alert("Error : " + e.response.message);
+        }
+        else {
+            var path = e.response.fileRelativePath;
+            if (e.operation == "remove") {
+                $("#FileRelativePath").val("/@Url.Content("Content/ImpDynamics/Files/default.png")");
+
+                var fileObject = $("#fileProduct");
+                var fileName = "default.png";
+                fileObject.attr('src', '/Content/Defaults/Web/default.png');
+                fileObject.attr('alt', fileName);
+                fileObject.attr('title', fileName);
+                fileObject.parent('a').attr('href', "/" + "Content/ImpDynamics/Files/default.png");
+            }
+            else {
+                $("#FileRelativePath").val(path);
+
+                kendo.alert("Upload Completed");
+
+                var fileTable = document.getElementById("tbodyFile");
+                var fileName = path.substr(path.lastIndexOf('/') + 1);
+                var fileExt = fileName.substr(fileName.lastIndexOf('.'));
+
+                var row = document.createElement('tr');
+                row.setAttribute('id', 'fileProductRow_' + e.response.productFileId);
+                row.innerHTML = '' +
+                '<td class="col-sm-1 col-md-2">' +
+                '<a class="thumbnail pull-left" href="/'+path+'" target="_blank">' +
+                '<img id="fileProduct_' + e.response.productFileId +'"' +
+                'src="/Content/Defaults/Web/' + grabIcon(fileExt) + '"' +
+                'alt="' + path.substr(path.lastIndexOf('/')+1) + '"' +
+                'title="' + path.substr(path.lastIndexOf('/') + 1) + '"' +
+                'onerror="src=\'/Content/@_storeFrontName/Files/default.png\'"' +
+                'style="width: 72px; height: 72px;" />' +
+                '</a>' +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                e.response.productFileDateCreated +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                e.response.productFileUserName +
+                '</td>' +
+                '<td class="col-sm-1 col-md-2">' +
+                '<button type="button" id="btnRemove" class="btn btn-danger" onclick="btnRemoveFileOnClick(this,' + e.response.productFileId + ')">' +
+                '<span class="glyphicon glyphicon-remove"></span> Remove' +
+                '</button>' +
+                '</td>';
+
+                $("#tbodyFile").children('tr').remove();
+                fileTable.appendChild(row);
+
+                $(".k-upload-status").each(function (index, item) {
+                    $(item).remove();
+                });
+                $(".k-upload-files").each(function (index, item) {
+                    $(item).remove();
+                })
+
+            }
+        }
+    }
+
+    function onImageUpload(e) {
+        e.data = {productId: "@Model.Id"}
+    }
+
+    function onFileUpload(e) {
+        e.data = {productId: "@Model.Id"}
+    }
+
+    function onBtnStatusClick(e) {
+        var actionConfirmed = false;
+        if (e.target.value == "Deactivate") {
+            var resp = confirm("Deactivating will remove product from shopper's Product List");
+            if (resp == true) {
+                actionConfirmed = true;
+                $("#Status").val("0")
+            }
+        }
+        if (e.target.value == "Activate") {
+            var resp = confirm("Activating will add product to shopper's Product List");
+            if (resp == true) {
+                actionConfirmed = true;
+                $("#Status").val("1")
+            }
+        }
+        if (actionConfirmed) {
+            $.ajax({
+                datatype: "json",
+                url: '@Url.Action("UI_ToggleStatus", new { Id = Model.Id })',
+                success: function (data) {
+                    if (data.status == 1) {
+                        $("#btnStatus").val("Deactivate").attr("class","btn btn-danger");
+                        $("#lblStatus").text("Active");
+                    }
+                    if (data.status == 0) {
+                        $("#btnStatus").val("Activate").attr("class","btn btn-success");
+                        $("#lblStatus").text("Inactive");
+                    }
+                }
+            })
+        }
+    }
+
+    $("#btnSave").click(function () {
+        var shortDesc = $("#ShortDesc").val().trim();
+        var longDesc = $("#LongDesc").val().trim();
+        if (shortDesc=='') {
+            alert('The Short Desc field is required.');
+            return false;
+        }
+        else if (longDesc == '') {
+            alert('The Long Desc field is required.');
+            return false;
+        }
+        else {
+        $.ajax({
+            url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify({ categories: $("#categorySelected").data("kendoListBox").dataItems(), product: { Id: @Model.Id} })
+            })
+        }
+    })
+
+    $("#btnSaveCategory").click(function () {
+        $.ajax({
+            url: '@Url.Action("ToolbarTemplate_Categories_SaveSelected")',
+            type: "POST",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify({ categories: $("#categorySelected").data("kendoListBox").dataItems(), product: { Id: '@Model.Id' } })
+        })
+    })
+
+    $("#MinQty").on("change", function (e) {
+        var minqtycheck = $('#EnableMinQty');
+        var minval = parseInt($("#MinQty").val());
+        var maxval = parseInt($("#MaxQty").val());
+        if (minval > maxval) {
+            $("#MinQty").val(maxval);
+        }
+        if (minval <= 0) {
+            if (minqtycheck.is(":checked") == true) {
+                alert("Min Qty Must Be Greater Than Zero. Please Try Again");
+                $("#MinQty").val(1);
+            }
+        } else {
+            $("#MaxQty").attr("min", minval);
+            $('#EnableMinQty').prop('checked', true);
+        }
+    })
+
+    $("#MaxQty").on("change", function (e) {
+        var minval = parseInt($("#MinQty").val());
+        var maxval = parseInt($("#MaxQty").val());
+        if (maxval < minval) {
+            $("#MaxQty").val(minval);
+        }
+        $("#MinQty").attr("max", maxval);
+    })
+
+    $('#EnableMinQty').on('click', function (e) {
+        var minval = parseInt($("#MinQty").val());
+        if (this.checked) {
+            if (minval <= 0) {
+                alert("Min Qty Must Be Greater Than Zero. Please Try Again");
+                this.checked = false;
+            }
+        }
+    })
+
+    $('#EnableMaxQty').on('click', function (e) {
+        var minval = parseInt($("#MinQty").val());
+        var maxval = parseInt($("#MaxQty").val());
+        if (this.checked) {
+            if (maxval <= 0) {
+                alert("Max Qty Must Be Greater Than Zero. Please Try Again");
+                this.checked = false;
+            } else if (maxval < minval) {
+                alert("Max Qty Must Be Greater Than Min Qty. Please Try Again");
+                this.checked = false;
+            }
+        }
+
+    })
+
+    function grabIcon(extension) {
+        switch (extension) {
+            case '.jpg':
+            case '.img':
+            case '.png':
+            case '.gif':
+                return "jpg.png";
+            case '.doc':
+            case '.docx':
+                return "doc.png";
+            case '.csv':
+            case '.xls':
+            case '.xlsx':
+                return "xls.png";
+            case '.pdf':
+                return "pdf.png";
+            case '.zip':
+            case '.rar':
+                return "zip.png";
+            default:
+                return "default.png";
+        }
+    }
+
+    function CategoriesRemove(ev) {
+        kendo.confirm("Remove Category?")
+            .done(function () {
+                var removedCategories = ev.dataItems;
+                for (var i = 0; i < removedCategories.length; i++) {
+                    var item = removedCategories[i];
+                    //alert(item.Id);
+                    $.ajax({
+                    url: '@Url.Action("Async_Remove_Categories")',
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json",
+                        data: JSON.stringify({ ProductCategoryId: item.Id })
+                    }).done(function () {
+                        //var uploadedImagesDataSource = $("#uploadedImagesListBox").data("kendoListBox").dataSource;
+                        //uploadedImagesDataSource.read();
+                        alert("Category removed!");
+                    });
+                }
+            })
+            .fail(function () {
+                //var uploadedImagesDataSource = $("#uploadedImagesListBox").data("kendoListBox").dataSource;
+                //uploadedImagesDataSource.read();
+                //$("#ProductImages").data("kendoScrollView").dataSource.read();
+                //$("#ProductImages").data("kendoScrollView").scrollTo(1);
+                alert("Remove Category Failed!");
+            })
+    }
+
+    function onUploadedImagesRemove(ev) {
+        kendo.confirm("Remove Image?")
+        .done(function () {
+            var removedImages = ev.dataItems;
+            for (var i = 0; i < removedImages.length; i++) {
+                var item = removedImages[i];
+                $.ajax({
+                    url: '@Url.Action("Async_Remove")',
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: JSON.stringify(item)
+                }).done(function () {
+                    var uploadedImagesDataSource = $("#uploadedImagesListBox").data("kendoListBox").dataSource;
+                    uploadedImagesDataSource.read();
+                });
+            }
+        })
+        .fail(function () {
+            var uploadedImagesDataSource = $("#uploadedImagesListBox").data("kendoListBox").dataSource;
+            uploadedImagesDataSource.read();
+            $("#ProductImages").data("kendoScrollView").dataSource.read();
+            $("#ProductImages").data("kendoScrollView").scrollTo(1);
+        })
+    }
+
+    function onUploadedImagesReorder(e) {
+
+        e.preventDefault();
+        var dataSource = e.sender.dataSource;
+
+        var dataItem = e.dataItems[0]
+        var index = dataSource.indexOf(dataItem) + e.offset;
+        dataSource.remove(dataItem);
+        dataSource.insert(index, dataItem);
+        e.sender.wrapper.find("[data-uid='" + dataItem.uid + "']").addClass("k-state-selected");
+
+        for (var i = 0; i < dataSource._data.length; i++) {
+            dataSource._data[i].DisplayOrder = i + 1;
+        }
+            $.ajax({
+                url: '@Url.Action("Async_ImageReorder")',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify(dataSource._data)
+            }).done(function () {
+                var uploadedImagesDataSource = $("#uploadedImagesListBox").data("kendoListBox").dataSource;
+                uploadedImagesDataSource.read();
+                $("#ProductImages").data("kendoScrollView").dataSource.read();
+                $("#ProductImages").data("kendoScrollView").scrollTo(1);
+            });
+    }
+
+    $(function () {
+
+        // Add icon class for the product file
+        @*var productFile = $("#fileProduct")
+        productFile.attr('src', '/Content/Defaults/Web/' + grabIcon("@Path.GetExtension(Model.FileRelativePath)"));*@
+
+        // if no file, hide remove button
+        //if (productFile.parent('a').attr('href').indexOf('/default.png') > 0) {
+        //    $("#rowFile").hide();
+        //    $("#btnRemoveFile").hide();
+        //}
+
+        // Autoclose the page status display
+        var alert = $("div.alert[auto-close]");
+        alert.each(function () {
+
+            var that = $(this);
+            var time_period = that.attr('auto-close');
+            setTimeout(function () {
+                that.alert('close');
+            }, time_period);
+        })
+
+        if ('@Model.IsFulfilledByVendor' == 'True')
+            $("#fieldsetFulfilledByVendor").prop("disabled", false);
+        else
+            $("#fieldsetFulfilledByVendor").prop("disabled", true);
+    })
+
+
+    $(document).ready(function () {
+
+        var divMinMax = document.getElementById("divMinMaxEnable");
+        //if ('@_setting.TurnOnProductMinMaxLevels' == 1 && '@_setting.TurnOnProductMinMaxLevelsFor' == 'Enforce Per Item') {
+        if ('@_setting.TurnOnProductMinMaxLevels' == 1) {
+            divMinMax.style.display = "block";
+        } else {
+            divMinMax.style.display = "none";
+        }
+
+    });
+
+
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks the button, open the modal
+    btn.onclick = function () {
+        modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+</script>

@@ -1,0 +1,22 @@
+﻿@model StoreFront2.ViewModels.CategoryViewModel
+
+        <h3>Category</h3>
+        @Html.HiddenFor(model => model.Id)
+
+        <div>
+            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-4" })
+        </div>
+        <div>
+            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Name)
+        </div>
+
+        <div>
+            @Html.LabelFor(model => model.Desc, htmlAttributes: new { @class = "control-label col-md-4" })
+        </div>
+        <div>
+            @*@Html.Kendo().DateTimePickerFor(model => model.Desc)*@
+            @Html.EditorFor(model => model.Desc, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Desc)
+        </div>
+

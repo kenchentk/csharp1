@@ -1,0 +1,597 @@
+﻿@using StoreFront2.Data;
+
+@{
+    var _access = new UserPermission();
+    var _usersetting = new UserSetting();
+    var _storeFrontName = "Defaults";
+    var _setting = new SystemSetting();
+    var _site = new StoreFront2.Models.Site();
+    if (Session["Site"] != null)
+    {
+        Layout = ((StoreFront2.Models.Site)Session["Site"]).LayoutPath;
+        _storeFrontName = ((StoreFront2.Models.Site)Session["Site"]).StoreFrontName;
+        _setting = ((StoreFront2.Models.Site)Session["Site"]).Setting;
+        _access = ((StoreFront2.Models.Site)Session["Site"]).SiteAuth;
+        _usersetting = ((StoreFront2.Models.Site)Session["Site"]).SiteUserSetting;
+        _site = (StoreFront2.Models.Site)Session["Site"];
+    }
+}
+
+<style>
+    .k-list-scroller {
+        border-width: 0px;
+    }
+
+    .general-label {
+        font-size: 0.8em;
+        padding-right: 1em
+    }
+</style>
+
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+<script type="text/x-kendo-tmpl" id="template">
+
+    <div class="product">
+
+        <div class="k-card">
+
+            <div class="product_image">
+                <img onclick="onProductDetailClick('#:Id#')" alt="#:ProductCode#" class="img-responsive card-img-top" style="padding:5px; margin:auto" onclick="onProductDetailClick('#:Id#')" src="@Url.Content("~/")#:ImageRelativePath#" onerror="src='@Url.Content("~/Content/" + _storeFrontName + "/Images/default.png")'" />
+            </div>
+            <div class="col-md-12" style="text-align:center; overflow:hidden">
+                <p class="k-card-subtitle">
+                    #:data.ShortDesc#
+                </p>
+            </div>
+            @{ if (_setting.DisplayProductPrices == 1)
+                {
+                    if (_site.CurrencyFlag == 1)
+                    {
+                        <span class="text-primary" style="text-align:center; font-weight:bolder;">Price $#:data.SellPrice#</span>
+                    }
+                    else
+                    {
+                        <span class="text-primary" style="text-align:center; font-weight:bolder;">Price $#:data.SellPriceCAD#</span>
+                    }
+                }
+            }
+            <div class="group_addtocart" >
+                <div class="col-md-6">
+                    <span class="general-label">QTY</span>
+                    <input class="orderqty" id="QtyOrdered" type="text" value="#:data.MinQty#" style="width:30px" />
+                    #if (data.InStock) {#
+                    @{ if (_setting.DisplayInventoryAvailability == 1)
+                        { <i class="fa fa-check-circle"></i>} }
+                    #} else {#
+                    @{ if (_setting.DisplayInventoryAvailability == 1)
+                        { <i class="fa fa-ban" style="color:red"></i>} }
+                    #}#
+                    #if (data.InStock) {#
+                    @{ if (_setting.DisplayInventoryAvailability == 1)
+                        {
+                            if (_setting.DisplayInventoryAvailabilityFor == "Actual Inventory")
+                            { <span>#=data.EMSQty# In Stock</span> }
+                            else
+                            { <span>In Stock</span> }
+                        }
+                    }
+                    #} else {#
+                    @{ if (_setting.DisplayInventoryAvailability == 1)
+                        {
+                            if (_setting.DisplayInventoryAvailabilityFor == "Actual Inventory")
+                            { <span>Out of Stock</span> }
+                            else
+                            { <span>Out of Stock</span> }
+
+                            @*<span>#=#</span>*@
+                        }
+                    }
+                    #}#
+
+                    #if (data.EstRestockDate != null) {#
+                    @{ if (_setting.DisplayInventoryAvailability == 1 && _setting.DisplayInventoryAvailabilityFor == "Actual Inventory")
+                        {
+                            <br />
+                            <span class="general-label">EST AVAILABLE DATE : #=kendo.toString(data.EstRestockDate,"MM/dd/yyyy")#</span>
+                        }
+                    }
+                    #}#
+                </div>
+                #if (data.InStock) {#
+                <div class="addTocartBtn col-md-6" >
+                    <input id="btnAddToCart" value="Add To Cart" class="btn btn-success btn-sm center" onclick="addToCart(event)" />
+                </div>
+                <span class="text-danger col-md-12" id="QtyOrderedError"></span>
+                #} else {#
+                @{ if (_setting.DisableOutOfStockOrdering == 0)
+                    {
+                        <div class="addTocartBtn col-md-6" >
+                            <input id="btnAddToCart" value="Add To Cart" class="btn btn-success btn-sm center" onclick="addToCart(event)" />
+                        </div>
+                        <span class="text-danger col-md-12" id="QtyOrderedError"></span>
+                    }
+                    else
+                    {
+                        <span class="text-danger col-md-12" id="QtyOrderedError"></span>
+
+                    }
+                }
+                #}#
+            </div>
+            <div class="clearfix">
+            </div>
+        </div>
+    </div>
+
+
+
+</script>
+
+<div class="container">
+    
+
+    <div class="col-md-12 col-sm-12">
+        <div class="row">
+            <div class="col-md-2 col-sm-12 p-0 pos_rela categoryGroup">
+                <div class="categoryBox">
+                    <i class="fa fa-list"></i>
+                    <span class="general-label category_title">Categories</span>
+                </div>
+
+                <div class="listCategory hidden">
+                    @(Html.Kendo().ListBox()
+                                .Name("category")
+                                .HtmlAttributes(new {  @class = "categoryItemList" })
+                                .Selectable(ListBoxSelectable.Multiple)
+                                .DataTextField("Name")
+                                .DataValueField("Id")
+                                .DataSource(source =>
+                                {
+                                    source.Read(read =>
+                                    {
+                                        read.Action("Read_Categories", "Order");
+                                    });
+                                })
+                                .Events(events =>
+                                {
+                                    events.Change("onCategoryChange");
+                                    events.DataBound("onCategoryDataBound");
+                                })
+
+                            )
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-12 p-0 pos_rela categoryGroup groupInputSearch">
+                <i class="fa fa-search iconSearch"></i>
+                <input type="text" id="search" aria-label="Small" aria-describedby="inputGroup-sizing-sm" value="@ViewBag.SearchText" placeholder="Search Product Code...">
+                <button id="btnClear" type="button" class="btn btn-secondary btn-number">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="col-md-4 col-sm-12 p-0 pos_rela categoryGroup groupInputSearch">
+                <i class="fa fa-search iconSearch"></i>
+                <input type="text" id="searchDescription" aria-label="Small" aria-describedby="inputGroup-sizing-sm" value="@ViewBag.SearchTextDescription" placeholder="Search Description...">
+                <button id="btnClearDescription" type="button" class="btn btn-secondary btn-number">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="col-md-2 col-sm-12 p-0 pos_rela categoryGroup groupBtnForm">
+                <button id="btnSearch" type="button" class="btn btn-secondary btn-sm" style="border-right: 1px solid #ccc;">
+                    <i class="fa fa-search"></i>
+                </button>
+                <button id="btnClearAll" type="button" class="btn btn-secondary btn-sm">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            @(Html.Kendo().ListView<StoreFront2.ViewModels.ProductViewModel>()
+                                    .Name("listView")
+                                    .HtmlAttributes(new {@class = "produc-list-box" })
+                                    .TagName("div")
+                                    .ClientTemplateId("template")
+                                    .Selectable(selectable => selectable.Mode(ListViewSelectionMode.Single))
+                                    .Editable()
+                                    .DataSource(dataSource => dataSource
+                                        .Read(read => read.Action("Products_Read", "Order"))
+                                        .Update(update => update.Action("Product_Update", "Order"))
+                                        .Model(d =>
+                                        {
+                                            d.Id(p => p.Id);
+                                            d.Field(p => p.Id).Editable(false);
+                                            d.Field(p => p.Upc).Editable(false);
+                                            if (_setting.DisplayProductPrices == 1)
+                                            {
+                                                if (_site.CurrencyFlag == 2)
+                                                {
+                                                    d.Field(p => p.SellPriceCAD).Editable(false);
+                                                }
+                                                else
+                                                {
+                                                    d.Field(p => p.SellPrice).Editable(false);
+                                                }
+                                            }
+                                            d.Field(p => p.LowLevel).Editable(true);
+                                            d.Field(p => p.MinQty);
+                                            d.Field(p => p.MaxQty);
+                                        })
+                                        .PageSize(20)
+                                    ).Pageable()
+            .Events(ev => ev.DataBound("onListViewDataBound"))
+            )
+            @(Html.Kendo().Window().Name("AddedToCart")
+                .Title("Product Added to Cart")
+                .Visible(false)
+                .Modal(true)
+                .Draggable(false)
+                .Width(300)
+            )
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .k-card {
+        height: 320px;
+    }
+
+    .k-listbox {
+        width: 100%;
+        height: auto;
+        font-size: medium;
+        border-width: 0px;
+        border: none;
+        padding-bottom: 20px;
+    }
+
+        .k-listbox .k-item {
+            padding-left: 3px;
+            line-height: 40px;
+            font-size: 0.9em;
+        }
+
+    #listView {
+        padding: 10px 5px;
+        margin-bottom: -1px;
+        min-height: 510px;
+        font: inherit;
+    }
+
+    .txtbox {
+        width: 30px;
+        height: 30px;
+        padding: 1px 1px 1px 1px;
+    }
+
+    .product {
+        float: left;
+        position: relative;
+        width: 350px;
+        min-height: 300px;
+        padding: 5px;
+    }
+
+
+
+        .product h3 {
+            margin: 0;
+            padding: 3px 5px 0 0;
+            max-width: 350px;
+            overflow: hidden;
+            line-height: 1.1em;
+            font-size: .9em;
+            font-weight: normal;
+            text-transform: uppercase;
+            text-align: center;
+            color: #999;
+        }
+
+        .product img {
+            position: relative;
+            background-position: 50% 50%;
+            background-repeat: no-repeat;
+            background-size: inherit;
+            max-height: 213px;
+        }
+
+    .col-item .separator {
+        border-top: 1px solid #E1E1E1;
+    }
+
+
+
+    .k-listview:after {
+        content: ".";
+        display: block;
+        height: 0;
+        clear: both;
+        visibility: hidden;
+    }
+</style>
+
+
+
+<script type="text/x-kendo-template" id="templateAddedToCart">
+    <div id="details-container">
+        <h2>#= LowLevel #</h2>
+        <h2>#= ProductCode #</h2>
+        <em>#= ShortDesc #</em>
+    </div>
+</script>
+
+<script>
+
+    var filterCategory = { logic: 'or', filters: [] };
+    var filterSearch = { logic: 'or', filters: [] };
+
+    var infoTemplate = kendo.template($("#templateAddedToCart").html());
+
+    var selectedProduct = "";
+
+    function addToCart(e) {
+        var listview = $('#listView').data('kendoListView');
+        var productContainer = $(e.target).closest(".product");
+        var product = listview.dataItem(productContainer);
+        var qty = parseInt(productContainer.find("#QtyOrdered").val());
+
+        $.ajax({
+            type: "POST",
+            url: "/Order/Cart_AddItem",
+            data: JSON.stringify({ qtyOrdered: qty, productId: product.Id }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (response) {
+                if (response != null) {
+                    if (response.result == "Error") {
+                        alert(response.message);
+                        //alert("Qty ordered for " + response.productcode + " more than maximum allowed (" + response.maxqty + ")")
+                    }
+                    else if (response.result == "Warning") {
+                        alert(response.message);
+                        $("#spanCartCount").text(response.totItemsInCart);
+                    }
+                    else {
+                        alert("Product Added to Cart")
+                        $("#spanCartCount").text(response.totItemsInCart);
+                    }
+                }
+                else {
+                    alert("Something went wrong");
+                }
+            },
+            failure: function (response) {
+                alert(response.responseText);
+            },
+            error: function (response) {
+                alert(response.responseText);
+            }
+        });
+
+    }
+
+    function onProductDetailClick(productId) {
+        var listBox = $('#category').data('kendoListBox');
+        var selected = listBox.select().map(function (_, x) {
+            return listBox.dataItem(x);
+        })
+        var categoryIds = "";
+        if (selected.length > 0) {
+            for (var i = 0; i < selected.length; i++) {
+                categoryIds += selected.get()[i].Id + ",";
+                break; // only support one category for now
+            }
+            categoryIds = categoryIds.substring(0, categoryIds.length - 1);
+        }
+        window.location.href = '@Html.Raw(Url.Action("ProductDetail", "Order", new { id = "PRODUCTID", categoryIdsSelected = "CATEGORYID", searchText = "SEARCHTEXT", searchTextDescription = "SEARCHDESCRIPTION" }))'.replace("PRODUCTID", productId).replace("CATEGORYID", categoryIds).replace("SEARCHTEXT", $("#search").val()).replace("SEARCHDESCRIPTION", $("#searchDescription").val());
+    }
+
+    // These 2 functions below is for filtering
+    function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
+    function getBoolean(str) {
+        if ("true".startsWith(str)) {
+            return true;
+        } else if ("false".startsWith(str)) {
+            return false;
+        } else {
+            return null;
+        }
+    }
+
+    function onCategoryChange(e) {
+        var listView = $('#listView').data('kendoListView');
+        var listBox = $('#category').data('kendoListBox');
+        var operator = 'eq';
+        //var value = e.sender.value(); // this one for kendomultiselect
+        var value = e.sender.select(); // this one for kendolistbox
+
+        listView.dataSource.filter({});
+
+        var filter = { logic: 'or', filters: [] };
+        if (value) {
+            for (var i = 0; i < value.length; i++) {
+                filter.filters.push({
+                    field: "CategoriesString",
+                    operator: "contains",
+                    value: "[" + e.sender.dataItem(value[i]).Id + "]"
+                });
+            }
+        }
+
+        filterAll = { logic: 'and', filters: [] };
+        filterCategory = filter;
+        if (filterSearch.filters.length > 0) {
+            filterAll.filters.push(filterSearch);
+            filterAll.filters.push(filterCategory);
+        } else {
+            filterAll.filters.push(filterCategory);
+        }
+        listView.dataSource.filter(filterAll);
+    }
+
+    function onCategoryDataBound(e) {
+        var listView = $('#listView').data('kendoListView');
+        var listBox = $('#category').data('kendoListBox');
+        var operator = 'eq';
+        var value = e.sender.select(); // this one for kendolistbox
+
+        // Set the categories
+        var categoryId = '@(ViewBag.CategoryId)';
+        var categoryName = '@(ViewBag.CategoryName)';
+        if (categoryId != "0") {
+            var listBox = $("#category").data("kendoListBox");
+            var item = listBox.items().filter(function (index) {
+                return $(this).text().trim() === categoryName.trim();
+            });
+            listBox.select(item);
+        }
+
+        listView.dataSource.filter({});
+        var searchText = "@(ViewBag.SearchText)";
+        var searchTextDescription = "@(ViewBag.SearchTextDescription)";
+
+        var filter = { logic: 'and', filters: [] };
+        var value = searchText;
+        filter.filters.push({
+            field: 'ProductCode',
+            operator: 'contains',
+            value: value
+        })
+        var valueDescription = searchTextDescription;
+        filter.filters.push({
+            field: 'ShortDesc',
+            operator: 'contains',
+            value: valueDescription
+        })
+
+        // Combine Category and Search filter
+        filterAll = { logic: 'and', filters: [] };
+        filterSearch = filter;
+
+        if (categoryId != "0") {
+            var filter = { logic: 'or', filters: [] };
+            filter.filters.push({
+                field: "CategoriesString",
+                operator: "contains",
+                value: "[" + categoryId + "]"
+            });
+            filterCategory = filter;
+        }
+
+        if (filterCategory.filters.length) {
+            filterAll.filters.push(filterCategory);
+            filterAll.filters.push(filterSearch);
+        } else {
+            filterAll.filters.push(filterSearch)
+        }
+
+        listView.dataSource.filter(filterAll);
+
+    }
+
+    function onListViewDataBound() {
+        window.addEventListener("resize", onWindowResize);
+        onWindowResize();
+    }
+
+    function onWindowResize() {
+        var listView = $('#listView');
+        var listViewWidth = parseInt(listView.css('width'));
+        var listViewPaddings = parseInt(listView.css('paddingLeft')) + parseInt(listView.css('paddingRight'));
+        var productCard = $(".product");
+        var productCardWidth = 350;
+        var productCardPaddings = 10;
+
+        var newMargin = "0px";
+        if (listViewWidth > 1060) {
+            newMargin = Math.floor((((listViewWidth - listViewPaddings)
+                - ((productCardWidth - productCardPaddings) * 3)))
+                / 6).toString() + "px";
+            productCard.css('width', "350px");
+        }
+        else {
+            productCard.css('width', ((listViewWidth - listViewPaddings) / 3).toString() + "px");
+        }
+
+        //productCard.css('marginLeft', newMargin);
+        productCard.css('marginRight', newMargin);
+    }
+
+    $(document).ready(function () {
+
+        //$('#clearFilter').on('click', function (e) {
+        //    var category = $('#category').data("kendoMultiSelect");
+        //    var search = $('#search');
+        //    var grid = $('#grid').data('kendoGrid');
+
+        //    category.value([]);
+        //    search.val("");
+        //    grid.dataSource.filter({});
+        //});
+        $('.categoryBox').on('click', function () {
+            $('.listCategory').toggleClass('hidden');
+        });
+        $('#btnClear').on('click', function (e) {
+            var searchBoxProductCode = $('#search');
+            searchBoxProductCode.val('');
+        })
+
+        $('#btnClearDescription').on('click', function (e) {
+            var searchBoxDescription = $('#searchDescription');
+            searchBoxDescription.val('');
+        })
+
+        $('#btnClearAll').on('click', function (e) {
+            //var searchBoxProductCode = $('#search');
+            //var searchBoxDescription = $('#searchDescription');
+            //searchBoxProductCode.val('');
+            //searchBoxDescription.val('');
+            $('#btnClear').click();
+            $('#btnClearDescription').click();
+            $('#btnSearch').click();
+        })
+
+        $('#btnSearch').on('click', function (e) {
+            var listview = $('#listView').data('kendoListView');
+
+            // blank filter and push additional parameters
+            var filter = { logic: 'and', filters: [] };
+            var value = $('#search').val();
+            filter.filters.push({
+                field: 'ProductCode',
+                operator: 'contains',
+                value: value
+            })
+
+            var valueDescription = $('#searchDescription').val();
+            filter.filters.push({
+                field: 'ShortDesc',
+                operator: 'contains',
+                value: valueDescription
+            })
+
+            // Combine Category and Search filter
+            filterAll = { logic: 'and', filters: [] };
+            filterSearch = filter;
+            if (filterCategory.filters.length) {
+                filterAll.filters.push(filterCategory);
+                filterAll.filters.push(filterSearch);
+            } else {
+                filterAll.filters.push(filterSearch)
+            }
+
+            listview.dataSource.filter(filterAll);
+
+        });
+
+        // remove borders
+        $('.k-list-scroller').css('border-width', 0)
+        $('.k-widget').css('border-width', 0)
+
+    });
+
+</script>
